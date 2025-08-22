@@ -109,7 +109,7 @@ body {
 
 .container {
     width: 100%;
-    max-width: 1600px;
+    max-width: 1800px;
     margin: 80px auto 0; /* Añadido margen superior para el header fijo */
     padding: 1rem;
     flex-grow: 1;
