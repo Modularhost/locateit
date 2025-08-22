@@ -136,7 +136,8 @@ function generateWarehouse() {
 
             const casillasGrid = document.createElement('div');
             casillasGrid.className = 'casillas-grid';
-            casillasGrid.style.gridTemplateColumns = `repeat(${config.casillas}, 60px)`; // Dynamically set columns based on config
+            const casillaWidth = window.innerWidth <= 768 ? '35px' : '40px'; // Ajuste para mobile
+            casillasGrid.style.gridTemplateColumns = `repeat(${config.casillas}, ${casillaWidth})`;
 
             for (let c = 1; c <= config.casillas; c++) {
                 const casilla = document.createElement('div');
