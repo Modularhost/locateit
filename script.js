@@ -42,7 +42,7 @@ let allItems = [];
 let filteredItems = [];
 let allCatalog = [];
 let filteredCatalog = [];
-let currentModal = null;
+let currentCasilla = null; // Declarada globalmente para corregir el error
 let selectedItems = new Set();
 let sortField = 'code';
 let sortDirection = 'asc';
@@ -412,11 +412,11 @@ function openCasillModal(location) {
 
 function closeCasillModal() {
     document.getElementById('casillModal').style.display = 'none';
-    currentModal = null;
+    currentCasilla = null;
 }
 
 async function saveItemToModal() {
-    if (!currentModal) return;
+    if (!currentCasilla) return;
 
     const code = document.getElementById('modalItemCode').value.trim().toUpperCase();
     const description = document.getElementById('modalItemDescription').value.trim();
@@ -432,7 +432,7 @@ async function saveItemToModal() {
         return;
     }
 
-    const itemsInCasilla = allItems.filter(item => item.location === currentModal);
+    const itemsInCasilla = allItems.filter(item => item.location === currentCasilla);
     if (itemsInCasilla.length >= maxItemsPerCasilla) {
         alert(`No se pueden agregar más ítems. Límite de ${maxItemsPerCasilla} ítems por casilla alcanzado.`);
         return;
@@ -445,7 +445,7 @@ async function saveItemToModal() {
     };
 
     try {
-        const docRef = doc(db, 'items', currentModal);
+        const docRef = doc(db, 'items', currentCasilla);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
             await updateDoc(docRef, {
@@ -453,7 +453,7 @@ async function saveItemToModal() {
             });
         } else {
             await setDoc(docRef, {
-                location: currentModal,
+                location: currentCasilla,
                 items: [itemData]
             });
         }
@@ -469,21 +469,20 @@ async function saveItemToModal() {
     }
 }
 
-async function removeItemFromModal(itemId) {
-    if (!currentModal) return;
+async function removeItemFromModal(itemId, location) {
+    if (!currentCasilla) return;
 
-    const [location, code] = itemId.split('|');
     const itemToRemove = allItems.find(item => item.id === itemId);
 
     try {
-        await updateDoc(doc(db, 'items', currentModal), {
+        await updateDoc(doc(db, 'items', currentCasilla), {
             items: arrayRemove({ code: itemToRemove.code, timestamp: itemToRemove.timestamp })
         });
         await loadItems();
         generateWarehouse();
         updateItemsTable();
         updateLocationSelectors();
-        openCasillModal(currentModal);
+        openCasillModal(currentCasilla);
         showNotification('Ítem eliminado correctamente');
     } catch (error) {
         console.error('Error al eliminar:', error);
@@ -495,7 +494,7 @@ function openItemModal(item) {
     document.getElementById('itemCodeView').textContent = item.code;
     document.getElementById('itemDescriptionView').textContent = item.description;
     const [pasillo, estante, casilla] = item.location.split('-');
-    document.getElementById('itemLocationView').textContent = `Pasillo ${pasillo}, Estante ${estante}, Casilla ${casilla.replace('C', '')}`;
+    document.getElementById('itemLocationView').textContent = `Pasillo ${pasillo}, Estante ${estante}, Casilla ${casilla}`;
     document.getElementById('itemModal').style.display = 'block';
 }
 
@@ -538,7 +537,7 @@ function addItem() {
         return;
     }
 
-    const catalogItem = catalog.find(item => item.code.toLowerCase() === code.toLowerCase());
+    const catalogItem = allCatalog.find(item => item.code.toLowerCase() === code.toLowerCase());
     if (!catalogItem) {
         showNotification('Código no encontrado en el catálogo.', 'error');
         return;
@@ -560,7 +559,7 @@ function addItem() {
             }).then(() => {
                 allItems.push(item);
                 showNotification('Item añadido correctamente.');
-                updateItemsView();
+                updateItemsTable();
                 generateWarehouse();
                 document.getElementById('itemCode').value = '';
                 document.getElementById('itemDescription').value = '';
@@ -575,7 +574,7 @@ function addItem() {
             }).then(() => {
                 allItems.push(item);
                 showNotification('Item añadido correctamente.');
-                updateItemsView();
+                updateItemsTable();
                 generateWarehouse();
                 document.getElementById('itemCode').value = '';
                 document.getElementById('itemDescription').value = '';
