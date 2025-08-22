@@ -11,6 +11,9 @@ body {
     height: 100vh;
     display: flex;
     flex-direction: column;
+    width: 100%;
+    margin: 0;
+    padding: 0;
 }
 
 .header {
@@ -97,12 +100,14 @@ body {
 }
 
 .container {
+    width: 100%;
     max-width: 1200px;
     margin: 0 auto;
     padding: 2rem;
-    flex-grow: 5;
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
+    box-sizing: border-box;
 }
 
 .section {
@@ -122,7 +127,7 @@ body {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 2rem;
-    min-height: 500px; /* Asegura un tamaño mínimo para el mapa */
+    min-height: 500px;
 }
 
 .pasillo {
@@ -162,7 +167,7 @@ body {
 
 .casillas-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(50px, 1fr)); /* Casillas más grandes */
+    grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
     gap: 0.5rem;
 }
 
@@ -173,7 +178,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1rem; /* Texto más grande */
+    font-size: 1rem;
     cursor: pointer;
     transition: all 0.2s;
     background: white;
