@@ -1,5 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot, connectFirestoreEmulator } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot, connectFirestoreEmulator, updateDoc, arrayUnion, arrayRemove } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 const firebaseConfig = {
     apiKey: "AIzaSyCTW1DbRaD0AruIRQ_Tn-e-bB8paTV4NNs",
@@ -37,6 +37,7 @@ let currentView = 'mapa';
 let currentPage = 1;
 let currentCatalogPage = 1;
 const itemsPerPage = 10;
+const maxItemsPerCasilla = 20;
 let allItems = [];
 let filteredItems = [];
 let allCatalog = [];
@@ -140,16 +141,28 @@ function generateWarehouse() {
             for (let c = 1; c <= config.casillas; c++) {
                 const casilla = document.createElement('div');
                 casilla.className = 'casilla';
-                casilla.textContent = `C${c}`;
                 const location = `${p}-${estanteLabels[e]}-C${c}`;
                 casilla.dataset.location = location;
                 casilla.addEventListener('click', () => openCasillModal(location));
                 
-                const item = allItems.find(item => item.location === location);
-                if (item) {
+                const itemsInCasilla = allItems.filter(item => item.location === location);
+                if (itemsInCasilla.length > 0) {
                     casilla.classList.add('occupied');
-                    casilla.title = `${item.code} - ${item.description}`;
+                    const badge = document.createElement('span');
+                    badge.className = 'item-count-badge';
+                    badge.textContent = itemsInCasilla.length;
+                    badge.style.position = 'absolute';
+                    badge.style.top = '2px';
+                    badge.style.right = '2px';
+                    badge.style.background = '#dc3545';
+                    badge.style.color = 'white';
+                    badge.style.borderRadius = '50%';
+                    badge.style.padding = '2px 6px';
+                    badge.style.fontSize = '0.75rem';
+                    casilla.appendChild(badge);
+                    casilla.title = itemsInCasilla.map(item => `${item.code} - ${item.description}`).join('\n');
                 }
+                casilla.textContent = `C${c}`;
 
                 casillasGrid.appendChild(casilla);
             }
@@ -216,10 +229,11 @@ function updateCasillaSelect() {
         
         for (let c = 1; c <= config.casillas; c++) {
             const location = `${pasillo}-${estante}-C${c}`;
-            if (!allItems.find(item => item.location === location)) {
+            const itemsInCasilla = allItems.filter(item => item.location === location);
+            if (itemsInCasilla.length < maxItemsPerCasilla) {
                 const option = document.createElement('option');
                 option.value = `C${c}`;
-                option.textContent = `Casilla ${c}`;
+                option.textContent = `Casilla ${c} (${itemsInCasilla.length}/${maxItemsPerCasilla})`;
                 casillaSelect.appendChild(option);
             }
         }
@@ -315,11 +329,11 @@ function toggleSelectAll() {
     toggleBulkActions();
 }
 
-function toggleItemSelection(location, checked) {
+function toggleItemSelection(itemId, checked) {
     if (checked) {
-        selectedItems.add(location);
+        selectedItems.add(itemId);
     } else {
-        selectedItems.delete(location);
+        selectedItems.delete(itemId);
     }
     
     const totalItems = document.querySelectorAll('input[name="itemSelect"]').length;
@@ -340,10 +354,13 @@ function toggleBulkActions() {
 async function bulkDelete() {
     if (selectedItems.size === 0) return;
     
-    if (confirm(`¿Estás seguro de eliminar ${selectedItems.size} items?`)) {
-        const deletePromises = Array.from(selectedItems).map(location => 
-            deleteDoc(doc(db, 'items', location))
-        );
+    if (confirm(`¿Estás seguro de eliminar ${selectedItems.size} ítems?`)) {
+        const deletePromises = Array.from(selectedItems).map(itemId => {
+            const [location, code] = itemId.split('|');
+            return updateDoc(doc(db, 'items', location), {
+                items: arrayRemove({ code, timestamp: allItems.find(item => item.id === itemId).timestamp })
+            });
+        });
         
         try {
             await Promise.all(deletePromises);
@@ -352,10 +369,10 @@ async function bulkDelete() {
             generateWarehouse();
             updateItemsTable();
             updateLocationSelectors();
-            showNotification(`${deletePromises.length} items eliminados`);
+            showNotification(`${deletePromises.length} ítems eliminados`);
         } catch (error) {
             console.error('Error en eliminación masiva:', error);
-            alert('Error al eliminar algunos items');
+            alert('Error al eliminar algunos ítems');
         }
     }
 }
@@ -363,7 +380,7 @@ async function bulkDelete() {
 function bulkExport() {
     if (selectedItems.size === 0) return;
     
-    const selectedItemsData = allItems.filter(item => selectedItems.has(item.location));
+    const selectedItemsData = allItems.filter(item => selectedItems.has(item.id));
     const data = {
         items: selectedItemsData,
         exportDate: new Date().toISOString(),
@@ -380,7 +397,7 @@ function bulkExport() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    showNotification(`${selectedItemsData.length} items exportados`);
+    showNotification(`${selectedItemsData.length} ítems exportados`);
 }
 
 function openCasillModal(location) {
@@ -389,15 +406,31 @@ function openCasillModal(location) {
     const title = document.getElementById('modalTitle');
     title.textContent = `Gestionar Casilla ${location}`;
 
-    const existingItem = allItems.find(item => item.location === location);
-    if (existingItem) {
-        document.getElementById('modalItemCode').value = existingItem.code || '';
-        document.getElementById('modalItemDescription').value = existingItem.description || '';
+    const itemsList = document.getElementById('modalItemsList');
+    itemsList.innerHTML = '';
+
+    const itemsInCasilla = allItems.filter(item => item.location === location);
+    if (itemsInCasilla.length > 0) {
+        const ul = document.createElement('ul');
+        ul.style.listStyle = 'none';
+        ul.style.padding = '0';
+        itemsInCasilla.forEach(item => {
+            const li = document.createElement('li');
+            li.style.marginBottom = '0.5rem';
+            li.innerHTML = `
+                <strong>${item.code}</strong> - ${item.description}
+                <button class="btn btn-secondary" onclick="removeItemFromModal('${item.id}')" 
+                        style="padding: 0.25rem 0.5rem; font-size: 0.8rem; background: #dc3545; color: white; margin-left: 0.5rem;">🗑️</button>
+            `;
+            ul.appendChild(li);
+        });
+        itemsList.appendChild(ul);
     } else {
-        document.getElementById('modalItemCode').value = '';
-        document.getElementById('modalItemDescription').value = '';
+        itemsList.textContent = 'No hay ítems en esta casilla.';
     }
 
+    document.getElementById('modalItemCode').value = '';
+    document.getElementById('modalItemDescription').value = '';
     modal.style.display = 'block';
 }
 
@@ -413,7 +446,7 @@ async function saveItemToModal() {
     const description = document.getElementById('modalItemDescription').value.trim();
 
     if (!code) {
-        alert('El código del item es requerido');
+        alert('El código del ítem es requerido');
         return;
     }
 
@@ -423,41 +456,62 @@ async function saveItemToModal() {
         return;
     }
 
+    const itemsInCasilla = allItems.filter(item => item.location === currentModal);
+    if (itemsInCasilla.length >= maxItemsPerCasilla) {
+        alert(`No se pueden agregar más ítems. Límite de ${maxItemsPerCasilla} ítems por casilla alcanzado.`);
+        return;
+    }
+
     const itemData = {
         code: code,
         description: catalogItem.description,
-        location: currentModal,
         timestamp: new Date().toISOString()
     };
 
     try {
-        await setDoc(doc(db, 'items', currentModal), itemData);
+        const docRef = doc(db, 'items', currentModal);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            await updateDoc(docRef, {
+                items: arrayUnion(itemData)
+            });
+        } else {
+            await setDoc(docRef, {
+                location: currentModal,
+                items: [itemData]
+            });
+        }
         await loadItems();
         generateWarehouse();
         updateItemsTable();
         updateLocationSelectors();
         closeCasillModal();
-        showNotification('Item guardado correctamente');
+        showNotification('Ítem guardado correctamente');
     } catch (error) {
         console.error('Error al guardar:', error);
-        alert('Error al guardar el item');
+        alert('Error al guardar el ítem');
     }
 }
 
-async function removeItemFromModal() {
+async function removeItemFromModal(itemId) {
     if (!currentModal) return;
 
+    const [location, code] = itemId.split('|');
+    const itemToRemove = allItems.find(item => item.id === itemId);
+
     try {
-        await deleteDoc(doc(db, 'items', currentModal));
+        await updateDoc(doc(db, 'items', currentModal), {
+            items: arrayRemove({ code: itemToRemove.code, timestamp: itemToRemove.timestamp })
+        });
         await loadItems();
         generateWarehouse();
         updateItemsTable();
         updateLocationSelectors();
-        closeCasillModal();
-        showNotification('Item eliminado correctamente');
+        openCasillModal(currentModal);
+        showNotification('Ítem eliminado correctamente');
     } catch (error) {
         console.error('Error al eliminar:', error);
-        alert('Error al eliminar el item');
+        alert('Error al eliminar el ítem');
     }
 }
 
@@ -478,12 +532,23 @@ async function loadItems() {
         const querySnapshot = await getDocs(collection(db, 'items'));
         allItems = [];
         querySnapshot.forEach((doc) => {
-            allItems.push({ id: doc.id, ...doc.data() });
+            const data = doc.data();
+            if (data.items && Array.isArray(data.items)) {
+                data.items.forEach(item => {
+                    allItems.push({
+                        id: `${data.location}|${item.code}`,
+                        location: data.location,
+                        code: item.code,
+                        description: item.description || '',
+                        timestamp: item.timestamp
+                    });
+                });
+            }
         });
         filteredItems = [...allItems];
         document.getElementById('itemsCount').textContent = allItems.length;
     } catch (error) {
-        console.error('Error al cargar items:', error);
+        console.error('Error al cargar ítems:', error);
     }
 }
 
@@ -496,7 +561,7 @@ async function addItem() {
     const casilla = document.getElementById('casillaSelect').value;
 
     if (!code) {
-        alert('El código del item es requerido');
+        alert('El código del ítem es requerido');
         return;
     }
 
@@ -512,21 +577,31 @@ async function addItem() {
     }
 
     const location = `${pasillo}-${estante}-${casilla}`;
-
-    if (allItems.find(item => item.location === location)) {
-        alert('Esta ubicación ya está ocupada');
+    const itemsInCasilla = allItems.filter(item => item.location === location);
+    if (itemsInCasilla.length >= maxItemsPerCasilla) {
+        alert(`No se pueden agregar más ítems. Límite de ${maxItemsPerCasilla} ítems por casilla alcanzado.`);
         return;
     }
 
     const itemData = {
         code: code,
         description: catalogItem.description,
-        location: location,
         timestamp: new Date().toISOString()
     };
 
     try {
-        await setDoc(doc(db, 'items', location), itemData);
+        const docRef = doc(db, 'items', location);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            await updateDoc(docRef, {
+                items: arrayUnion(itemData)
+            });
+        } else {
+            await setDoc(docRef, {
+                location: location,
+                items: [itemData]
+            });
+        }
         await loadItems();
         generateWarehouse();
         updateItemsTable();
@@ -541,32 +616,37 @@ async function addItem() {
         document.getElementById('estanteSelect').disabled = true;
         document.getElementById('casillaSelect').disabled = true;
         
-        showNotification('Item ubicado correctamente');
+        showNotification('Ítem ubicado correctamente');
     } catch (error) {
-        console.error('Error al ubicar item:', error);
-        alert('Error al ubicar el item');
+        console.error('Error al ubicar ítem:', error);
+        alert('Error al ubicar el ítem');
     }
 }
 
-async function removeItem(location) {
-    if (confirm('¿Estás seguro de que quieres eliminar este item?')) {
+async function removeItem(itemId) {
+    if (confirm('¿Estás seguro de que quieres eliminar este ítem?')) {
+        const [location, code] = itemId.split('|');
+        const itemToRemove = allItems.find(item => item.id === itemId);
+        
         try {
-            await deleteDoc(doc(db, 'items', location));
-            selectedItems.delete(location);
+            await updateDoc(doc(db, 'items', location), {
+                items: arrayRemove({ code: itemToRemove.code, timestamp: itemToRemove.timestamp })
+            });
+            selectedItems.delete(itemId);
             await loadItems();
             generateWarehouse();
             updateItemsTable();
             updateLocationSelectors();
-            showNotification('Item eliminado correctamente');
+            showNotification('Ítem eliminado correctamente');
         } catch (error) {
-            console.error('Error al eliminar item:', error);
-            alert('Error al eliminar el item');
+            console.error('Error al eliminar ítem:', error);
+            alert('Error al eliminar el ítem');
         }
     }
 }
 
 async function clearAllItems() {
-    if (confirm('¿Estás seguro de que quieres eliminar TODOS los items? Esta acción no se puede deshacer.')) {
+    if (confirm('¿Estás seguro de que quieres eliminar TODOS los ítems? Esta acción no se puede deshacer.')) {
         try {
             const querySnapshot = await getDocs(collection(db, 'items'));
             const deletePromises = [];
@@ -579,10 +659,10 @@ async function clearAllItems() {
             generateWarehouse();
             updateItemsTable();
             updateLocationSelectors();
-            showNotification('Todos los items eliminados');
+            showNotification('Todos los ítems eliminados');
         } catch (error) {
-            console.error('Error al eliminar todos los items:', error);
-            alert('Error al eliminar los items');
+            console.error('Error al eliminar todos los ítems:', error);
+            alert('Error al eliminar los ítems');
         }
     }
 }
@@ -597,27 +677,28 @@ function updateItemsTable() {
 
     pageItems.forEach(item => {
         const row = document.createElement('tr');
-        const isSelected = selectedItems.has(item.location);
+        const isSelected = selectedItems.has(item.id);
+        const itemsInCasilla = allItems.filter(i => i.location === item.location).length;
         
         const date = new Date(item.timestamp || Date.now());
         const formattedDate = date.toLocaleDateString('es-ES');
         
         row.innerHTML = `
             <td>
-                <input type="checkbox" name="itemSelect" value="${item.location}" 
+                <input type="checkbox" name="itemSelect" value="${item.id}" 
                        ${isSelected ? 'checked' : ''} 
-                       onchange="toggleItemSelection('${item.location}', this.checked)">
+                       onchange="toggleItemSelection('${item.id}', this.checked)">
             </td>
             <td><strong style="font-family: monospace; background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 4px;">${item.code}</strong></td>
             <td>${item.description || ''}</td>
             <td>
-                <code style="background: #e9ecef; padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.9rem;">${item.location}</code>
+                <code style="background: #e9ecef; padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.9rem;">${item.location} (${itemsInCasilla}/${maxItemsPerCasilla})</code>
             </td>
             <td style="font-size: 0.8rem; color: #666;">${formattedDate}</td>
             <td>
-                <button class="btn btn-secondary" onclick="editItemInline('${item.location}')" 
+                <button class="btn btn-secondary" onclick="editItemInline('${item.id}')" 
                         style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.25rem;">✏️</button>
-                <button class="btn btn-secondary" onclick="removeItem('${item.location}')" 
+                <button class="btn btn-secondary" onclick="removeItem('${item.id}')" 
                         style="padding: 0.25rem 0.5rem; font-size: 0.8rem; background: #dc3545; color: white;">🗑️</button>
             </td>
         `;
@@ -631,7 +712,7 @@ function updateItemsTable() {
     document.getElementById('nextBtn').disabled = currentPage >= totalPages;
     
     const totalItems = pageItems.length;
-    const selectedCount = pageItems.filter(item => selectedItems.has(item.location)).length;
+    const selectedCount = pageItems.filter(item => selectedItems.has(item.id)).length;
     const selectAllCheckbox = document.getElementById('selectAll');
     
     if (totalItems === 0) {
@@ -643,11 +724,9 @@ function updateItemsTable() {
     }
 }
 
-function editItemInline(location) {
-    const item = allItems.find(i => i.location === location);
-    if (item) {
-        openCasillModal(location);
-    }
+function editItemInline(itemId) {
+    const [location] = itemId.split('|');
+    openCasillModal(location);
 }
 
 function handleSearch() {
@@ -682,8 +761,8 @@ function highlightSearchResults(query) {
         casilla.classList.remove('highlighted');
         if (query) {
             const location = casilla.dataset.location;
-            const item = allItems.find(i => i.location === location);
-            if (item && (
+            const itemsInCasilla = allItems.filter(i => i.location === location);
+            if (itemsInCasilla.some(item => 
                 item.code.toLowerCase().includes(query.toLowerCase()) ||
                 (item.description && item.description.toLowerCase().includes(query.toLowerCase())) ||
                 location.toLowerCase().includes(query.toLowerCase())
@@ -947,12 +1026,20 @@ async function importFromJSON(data) {
     }
 
     if (data.items && Array.isArray(data.items)) {
-        const importPromises = data.items.map(item => {
-            return setDoc(doc(db, 'items', item.location), {
+        const groupedByLocation = data.items.reduce((acc, item) => {
+            if (!acc[item.location]) acc[item.location] = [];
+            acc[item.location].push({
                 code: item.code,
                 description: item.description || '',
-                location: item.location,
                 timestamp: item.timestamp || new Date().toISOString()
+            });
+            return acc;
+        }, {});
+
+        const importPromises = Object.entries(groupedByLocation).map(([location, items]) => {
+            return setDoc(doc(db, 'items', location), {
+                location,
+                items: items.slice(0, maxItemsPerCasilla)
             });
         });
         
@@ -977,7 +1064,7 @@ async function importFromCSV(csvText) {
         return;
     }
 
-    const importPromises = [];
+    const groupedByLocation = {};
     
     for (let i = 1; i < lines.length; i++) {
         const values = lines[i].split(',').map(v => v.trim().replace(/^"(.*)"$/, '$1'));
@@ -988,16 +1075,21 @@ async function importFromCSV(csvText) {
         });
 
         if (item.code && item.location) {
-            importPromises.push(
-                setDoc(doc(db, 'items', item.location), {
-                    code: item.code,
-                    description: item.description || '',
-                    location: item.location,
-                    timestamp: new Date().toISOString()
-                })
-            );
+            if (!groupedByLocation[item.location]) groupedByLocation[item.location] = [];
+            groupedByLocation[item.location].push({
+                code: item.code,
+                description: item.description || '',
+                timestamp: new Date().toISOString()
+            });
         }
     }
+
+    const importPromises = Object.entries(groupedByLocation).map(([location, items]) => {
+        return setDoc(doc(db, 'items', location), {
+            location,
+            items: items.slice(0, maxItemsPerCasilla)
+        });
+    });
 
     await Promise.all(importPromises);
     await loadItems();
