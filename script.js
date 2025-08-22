@@ -136,26 +136,29 @@ function generateWarehouse() {
 
             const casillasGrid = document.createElement('div');
             casillasGrid.className = 'casillas-grid';
-            const casillaWidth = window.innerWidth <= 768 ? '35px' : '40px'; // Ajuste para mobile
+            const casillaWidth = window.innerWidth <= 768 ? '35px' : '40px';
             casillasGrid.style.gridTemplateColumns = `repeat(${config.casillas}, ${casillaWidth})`;
 
             for (let c = 1; c <= config.casillas; c++) {
                 const casilla = document.createElement('div');
                 casilla.className = 'casilla';
-                const location = `${p}-${estanteLabels[e]}-C${c}`;
+                const casillaName = `${estanteLabels[e]}-${c}`;
+                const location = `${p}-${estanteLabels[e]}-${c}`;
                 casilla.dataset.location = location;
                 casilla.addEventListener('click', () => openCasillModal(location));
                 
                 const itemsInCasilla = allItems.filter(item => item.location === location);
-                if (itemsInCasilla.length > 0) {
+                const itemCount = itemsInCasilla.length;
+                casilla.textContent = itemCount > 0 ? `${casillaName} (${itemCount})` : casillaName;
+
+                if (itemCount > 0) {
                     casilla.classList.add('occupied');
                     const badge = document.createElement('span');
                     badge.className = 'item-count-badge';
-                    badge.textContent = itemsInCasilla.length;
+                    badge.textContent = itemCount;
                     casilla.appendChild(badge);
                     casilla.title = itemsInCasilla.map(item => `${item.code} - ${item.description}`).join('\n');
                 }
-                casilla.textContent = `C${c}`;
 
                 casillasGrid.appendChild(casilla);
             }
@@ -208,36 +211,20 @@ function updateEstanteSelect() {
 }
 
 function updateCasillaSelect() {
-    const pasilloSelect = document.getElementById('pasilloSelect');
-    const estanteSelect = document.getElementById('estanteSelect');
+    const pasillo = document.getElementById('pasilloSelect').value;
+    const estante = document.getElementById('estanteSelect').value;
     const casillaSelect = document.getElementById('casillaSelect');
-    
     casillaSelect.innerHTML = '<option value="">Seleccionar casilla</option>';
     
-    const pasillo = parseInt(pasilloSelect.value);
-    const estante = estanteSelect.value;
     if (pasillo && estante) {
-        casillaSelect.disabled = false;
-        const config = warehouseConfig.aisleConfigs[pasillo - 1] || { estantes: 4, casillas: 6 };
-        
+        const config = warehouseConfig.aisleConfigs[parseInt(pasillo) - 1] || { casillas: 6 };
         for (let c = 1; c <= config.casillas; c++) {
-            const location = `${pasillo}-${estante}-C${c}`;
-            const itemsInCasilla = allItems.filter(item => item.location === location);
-            if (itemsInCasilla.length < maxItemsPerCasilla) {
-                const option = document.createElement('option');
-                option.value = `C${c}`;
-                option.textContent = `Casilla ${c} (${itemsInCasilla.length}/${maxItemsPerCasilla})`;
-                casillaSelect.appendChild(option);
-            }
-        }
-        
-        if (casillaSelect.children.length === 1) {
             const option = document.createElement('option');
-            option.value = '';
-            option.textContent = 'No hay casillas disponibles';
-            option.disabled = true;
+            option.value = `${pasillo}-${estante}-${c}`;
+            option.textContent = `${estante}-${c}`;
             casillaSelect.appendChild(option);
         }
+        casillaSelect.disabled = false;
     } else {
         casillaSelect.disabled = true;
     }
@@ -394,37 +381,33 @@ function bulkExport() {
 }
 
 function openCasillModal(location) {
-    currentModal = location;
-    const modal = document.getElementById('casillModal');
-    const title = document.getElementById('modalTitle');
-    title.textContent = `Gestionar Casilla ${location}`;
-
+    currentCasilla = location;
+    document.getElementById('modalTitle').textContent = `Gestionar Casilla ${location.split('-')[1]}-${location.split('-')[2]}`;
+    document.getElementById('modalItemCode').value = '';
+    document.getElementById('modalItemDescription').value = '';
     const itemsList = document.getElementById('modalItemsList');
     itemsList.innerHTML = '';
 
     const itemsInCasilla = allItems.filter(item => item.location === location);
-    if (itemsInCasilla.length > 0) {
+    if (itemsInCasilla.length === 0) {
+        itemsList.innerHTML = '<p>No hay ítems en esta casilla.</p>';
+    } else {
         const ul = document.createElement('ul');
-        ul.style.listStyle = 'none';
-        ul.style.padding = '0';
         itemsInCasilla.forEach(item => {
             const li = document.createElement('li');
-            li.style.marginBottom = '0.5rem';
-            li.innerHTML = `
-                <strong>${item.code}</strong> - ${item.description}
-                <button class="btn btn-secondary" onclick="removeItemFromModal('${item.id}')" 
-                        style="padding: 0.25rem 0.5rem; font-size: 0.8rem; background: #dc3545; color: white; margin-left: 0.5rem;">🗑️</button>
-            `;
+            li.textContent = `${item.code} - ${item.description}`;
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = '🗑️';
+            deleteBtn.className = 'btn btn-secondary';
+            deleteBtn.style.marginLeft = '1rem';
+            deleteBtn.onclick = () => removeItemFromModal(item.id, location);
+            li.appendChild(deleteBtn);
             ul.appendChild(li);
         });
         itemsList.appendChild(ul);
-    } else {
-        itemsList.textContent = 'No hay ítems en esta casilla.';
     }
 
-    document.getElementById('modalItemCode').value = '';
-    document.getElementById('modalItemDescription').value = '';
-    modal.style.display = 'block';
+    document.getElementById('casillModal').style.display = 'block';
 }
 
 function closeCasillModal() {
@@ -545,75 +528,63 @@ async function loadItems() {
     }
 }
 
-async function addItem() {
-    const code = document.getElementById('itemCode').value.trim().toUpperCase();
+function addItem() {
+    const code = document.getElementById('itemCode').value.trim();
     const description = document.getElementById('itemDescription').value.trim();
-    
-    const pasillo = document.getElementById('pasilloSelect').value;
-    const estante = document.getElementById('estanteSelect').value;
-    const casilla = document.getElementById('casillaSelect').value;
+    const location = document.getElementById('casillaSelect').value;
 
-    if (!code) {
-        alert('El código del ítem es requerido');
+    if (!code || !location) {
+        showNotification('Por favor, completa todos los campos.', 'error');
         return;
     }
 
-    if (!pasillo || !estante || !casilla) {
-        alert('Selecciona una ubicación completa (pasillo, estante y casilla)');
-        return;
-    }
-
-    const catalogItem = allCatalog.find(item => item.code === code);
+    const catalogItem = catalog.find(item => item.code.toLowerCase() === code.toLowerCase());
     if (!catalogItem) {
-        alert('Este código no existe en el catálogo. Agrégalo primero al catálogo.');
+        showNotification('Código no encontrado en el catálogo.', 'error');
         return;
     }
 
-    const location = `${pasillo}-${estante}-${casilla}`;
-    const itemsInCasilla = allItems.filter(item => item.location === location);
-    if (itemsInCasilla.length >= maxItemsPerCasilla) {
-        alert(`No se pueden agregar más ítems. Límite de ${maxItemsPerCasilla} ítems por casilla alcanzado.`);
-        return;
-    }
-
-    const itemData = {
-        code: code,
+    const item = {
+        id: Date.now().toString(),
+        code,
         description: catalogItem.description,
+        location,
         timestamp: new Date().toISOString()
     };
 
-    try {
-        const docRef = doc(db, 'items', location);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            await updateDoc(docRef, {
-                items: arrayUnion(itemData)
+    const docRef = db.collection('items').doc(location);
+    docRef.get().then(doc => {
+        if (doc.exists) {
+            docRef.update({
+                items: firebase.firestore.FieldValue.arrayUnion(item)
+            }).then(() => {
+                allItems.push(item);
+                showNotification('Item añadido correctamente.');
+                updateItemsView();
+                generateWarehouse();
+                document.getElementById('itemCode').value = '';
+                document.getElementById('itemDescription').value = '';
+            }).catch(error => {
+                console.error('Error al añadir item:', error);
+                showNotification('Error al añadir item.', 'error');
             });
         } else {
-            await setDoc(docRef, {
-                location: location,
-                items: [itemData]
+            docRef.set({
+                location,
+                items: [item]
+            }).then(() => {
+                allItems.push(item);
+                showNotification('Item añadido correctamente.');
+                updateItemsView();
+                generateWarehouse();
+                document.getElementById('itemCode').value = '';
+                document.getElementById('itemDescription').value = '';
+            }).catch(error => {
+                console.error('Error al añadir item:', error);
+                showNotification('Error al añadir item.', 'error');
             });
         }
-        await loadItems();
-        generateWarehouse();
-        updateItemsTable();
-        updateCatalogTable();
-        updateLocationSelectors();
-        
-        document.getElementById('itemCode').value = '';
-        document.getElementById('itemDescription').value = '';
-        document.getElementById('pasilloSelect').value = '';
-        document.getElementById('estanteSelect').value = '';
-        document.getElementById('casillaSelect').value = '';
-        document.getElementById('estanteSelect').disabled = true;
-        document.getElementById('casillaSelect').disabled = true;
-        
-        showNotification('Ítem ubicado correctamente');
-    } catch (error) {
-        console.error('Error al ubicar ítem:', error);
-        alert('Error al ubicar el ítem');
-    }
+    });
 }
 
 async function removeItem(itemId) {

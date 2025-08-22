@@ -109,8 +109,8 @@ body {
 
 .container {
     width: 100%;
-    max-width: 1800px;
-    margin: 80px auto 0; /* Añadido margen superior para el header fijo */
+    max-width: 1600px;
+    margin: 80px auto 0;
     padding: 1rem;
     flex-grow: 1;
     display: flex;
@@ -182,7 +182,7 @@ body {
 
 .casillas-grid {
     display: grid;
-    grid-template-columns: repeat(6, 40px); /* Valor por defecto, se ajusta dinámicamente */
+    grid-template-columns: repeat(6, 40px);
     gap: 0.4rem;
     overflow-x: auto;
     padding-bottom: 0.4rem;
@@ -195,13 +195,16 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.75rem;
+    font-size: 0.65rem;
+    font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
     background: white;
-    padding: 0.3rem;
+    padding: 0.2rem;
     min-width: 40px;
     position: relative;
+    text-align: center;
+    line-height: 1.2;
 }
 
 .casilla:hover {
@@ -335,7 +338,7 @@ body {
     width: 100%;
     height: 100%;
     background: rgba(0,0,0,0.5);
-    z-index: 1001; /* Aumentado para estar encima del header fijo */
+    z-index: 1001;
 }
 
 .modal-content {
@@ -371,7 +374,7 @@ body {
 
 .notification {
     position: fixed;
-    top: 80px; /* Ajustado para no superponerse al header fijo */
+    top: 80px;
     right: 20px;
     padding: 0.8rem 1.2rem;
     background: #d4edda;
@@ -495,8 +498,8 @@ body {
     }
 
     .casilla {
-        font-size: 0.7rem;
-        padding: 0.2rem;
+        font-size: 0.6rem;
+        padding: 0.15rem;
     }
 
     .casillas-grid {
@@ -506,11 +509,12 @@ body {
 
 .item-count-badge {
     position: absolute;
-    top: 2px;
-    right: 2px;
+    top: 1px;
+    right: 1px;
     background: #dc3545;
     color: white;
     border-radius: 50%;
-    padding: 1px 4px;
-    font-size: 0.65rem;
+    padding: 1px 3px;
+    font-size: 0.6rem;
+    line-height: 1;
 }
