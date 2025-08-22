@@ -136,7 +136,7 @@ function generateWarehouse() {
 
             const casillasGrid = document.createElement('div');
             casillasGrid.className = 'casillas-grid';
-            casillasGrid.style.gridTemplateColumns = `repeat(${config.casillas}, 1fr)`;
+            casillasGrid.style.gridTemplateColumns = `repeat(${config.casillas}, 60px)`; // Dynamically set columns based on config
 
             for (let c = 1; c <= config.casillas; c++) {
                 const casilla = document.createElement('div');
@@ -151,14 +151,6 @@ function generateWarehouse() {
                     const badge = document.createElement('span');
                     badge.className = 'item-count-badge';
                     badge.textContent = itemsInCasilla.length;
-                    badge.style.position = 'absolute';
-                    badge.style.top = '2px';
-                    badge.style.right = '2px';
-                    badge.style.background = '#dc3545';
-                    badge.style.color = 'white';
-                    badge.style.borderRadius = '50%';
-                    badge.style.padding = '2px 6px';
-                    badge.style.fontSize = '0.75rem';
                     casilla.appendChild(badge);
                     casilla.title = itemsInCasilla.map(item => `${item.code} - ${item.description}`).join('\n');
                 }

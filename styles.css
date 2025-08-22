@@ -127,10 +127,11 @@ body {
 
 .warehouse-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
     gap: 1rem;
     min-height: 500px;
     width: 100%;
+    overflow-x: auto;
 }
 
 .pasillo {
@@ -139,6 +140,7 @@ body {
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    min-width: 300px;
 }
 
 .pasillo-header {
@@ -170,8 +172,10 @@ body {
 
 .casillas-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+    grid-template-columns: repeat(6, 60px); /* Default to 6 columns, will be overridden dynamically */
     gap: 0.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
 }
 
 .casilla {
@@ -181,11 +185,13 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
+    font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.2s;
     background: white;
     padding: 0.5rem;
+    min-width: 60px;
+    position: relative;
 }
 
 .casilla:hover {
@@ -423,6 +429,33 @@ body {
     color: #666;
 }
 
+#modalItemsList {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 0.5rem;
+    border: 1px solid #e1e8ed;
+    border-radius: 6px;
+    background: #f8f9fa;
+}
+
+#modalItemsList ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#modalItemsList li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    border-bottom: 1px solid #e1e8ed;
+}
+
+#modalItemsList li:last-child {
+    border-bottom: none;
+}
+
 @media (max-width: 768px) {
     .nav-controls {
         flex-direction: column;
@@ -450,8 +483,12 @@ body {
     }
 
     .casilla {
-        font-size: 0.9rem;
+        font-size: 0.8rem;
         padding: 0.3rem;
+    }
+
+    .casillas-grid {
+        grid-template-columns: repeat(6, 50px);
     }
 }
 
