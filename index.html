@@ -212,6 +212,7 @@
         <div class="modal-content">
             <span class="close" onclick="closeCasillModal()">&times;</span>
             <h3 id="modalTitle">Gestionar Casilla</h3>
+            <div id="modalItemsList" style="margin-bottom: 1rem;"></div>
             <div style="margin: 1rem 0;">
                 <label class="config-label">Código del item:</label>
                 <input type="text" id="modalItemCode" class="config-input" oninput="autoFillModalDescription()">
@@ -222,8 +223,7 @@
             </div>
             <div style="display: flex; gap: 1rem; margin-top: 2rem;">
                 <button class="btn btn-primary" onclick="saveItemToModal()">Guardar</button>
-                <button class="btn btn-secondary" onclick="removeItemFromModal()">Quitar</button>
-                <button class="btn btn-secondary" onclick="closeCasillModal()">Cancelar</button>
+                <button class="btn btn-secondary" onclick="closeCasillModal()">Cerrar</button>
             </div>
         </div>
     </div>
