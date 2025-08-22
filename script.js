@@ -33,7 +33,6 @@ window.onSnapshot = onSnapshot;
 
 console.log('Firebase inicializado correctamente');
 
-// Variables globales
 let currentView = 'mapa';
 let currentPage = 1;
 let currentCatalogPage = 1;
@@ -50,10 +49,9 @@ let catalogSortField = 'code';
 let catalogSortDirection = 'asc';
 let warehouseConfig = {
     pasillos: 4,
-    aisleConfigs: Array(4).fill({ estantes: 4, casillas: 6 })
+    aisleConfigs: Array(4).fill().map(() => ({ estantes: 4, casillas: 6 }))
 };
 
-// Inicialización
 document.addEventListener('DOMContentLoaded', async function() {
     await loadWarehouseConfig();
     updateAisleConfigs();
@@ -67,7 +65,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     showNotification('Sistema iniciado correctamente');
 });
 
-// Configuración de listeners
 function setupEventListeners() {
     document.querySelectorAll('[data-view]').forEach(btn => {
         btn.addEventListener('click', switchView);
@@ -77,7 +74,6 @@ function setupEventListeners() {
     document.getElementById('itemsSearchInput').addEventListener('input', handleItemsSearch);
     document.getElementById('catalogSearchInput').addEventListener('input', handleCatalogSearch);
     
-    // Cerrar sugerencias al hacer clic fuera
     document.addEventListener('click', function(event) {
         const searchContainer = document.querySelector('.search-container');
         const suggestions = document.getElementById('searchSuggestions');
@@ -87,7 +83,6 @@ function setupEventListeners() {
     });
 }
 
-// Gestión de vistas
 function switchView(e) {
     const view = e.target.dataset.view;
     currentView = view;
@@ -108,10 +103,11 @@ function switchView(e) {
     }
 }
 
-// Generación del almacén
 function generateWarehouse() {
     const grid = document.getElementById('warehouseGrid');
     grid.innerHTML = '';
+
+    console.log('Generando almacén con configuración:', warehouseConfig);
 
     for (let p = 1; p <= warehouseConfig.pasillos; p++) {
         const config = warehouseConfig.aisleConfigs[p-1] || { estantes: 4, casillas: 6 };
@@ -167,7 +163,6 @@ function generateWarehouse() {
     }
 }
 
-// Funciones para selectores de ubicación
 function updateLocationSelectors() {
     const pasilloSelect = document.getElementById('pasilloSelect');
     pasilloSelect.innerHTML = '<option value="">Seleccionar pasillo</option>';
@@ -189,7 +184,7 @@ function updateEstanteSelect() {
     casillaSelect.innerHTML = '<option value="">Seleccionar casilla</option>';
     casillaSelect.disabled = true;
     
-    const pasillo = pasilloSelect.value;
+    const pasillo = parseInt(pasilloSelect.value);
     if (pasillo) {
         estanteSelect.disabled = false;
         const config = warehouseConfig.aisleConfigs[pasillo - 1] || { estantes: 4, casillas: 6 };
@@ -213,7 +208,7 @@ function updateCasillaSelect() {
     
     casillaSelect.innerHTML = '<option value="">Seleccionar casilla</option>';
     
-    const pasillo = pasilloSelect.value;
+    const pasillo = parseInt(pasilloSelect.value);
     const estante = estanteSelect.value;
     if (pasillo && estante) {
         casillaSelect.disabled = false;
@@ -241,7 +236,6 @@ function updateCasillaSelect() {
     }
 }
 
-// Funciones de ordenamiento
 function sortItems(field) {
     if (sortField === field) {
         sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
@@ -305,7 +299,6 @@ function sortCatalog(field) {
     updateCatalogTable();
 }
 
-// Funciones de selección múltiple
 function toggleSelectAll() {
     const selectAllCheckbox = document.getElementById('selectAll');
     const itemCheckboxes = document.querySelectorAll('input[name="itemSelect"]');
@@ -344,7 +337,6 @@ function toggleBulkActions() {
     bulkActions.style.display = selectedItems.size > 0 ? 'block' : 'none';
 }
 
-// Acciones masivas
 async function bulkDelete() {
     if (selectedItems.size === 0) return;
     
@@ -391,7 +383,6 @@ function bulkExport() {
     showNotification(`${selectedItemsData.length} items exportados`);
 }
 
-// Modal para casillas
 function openCasillModal(location) {
     currentModal = location;
     const modal = document.getElementById('casillModal');
@@ -470,7 +461,6 @@ async function removeItemFromModal() {
     }
 }
 
-// Modal para información del item
 function openItemModal(item) {
     document.getElementById('itemCodeView').textContent = item.code;
     document.getElementById('itemDescriptionView').textContent = item.description;
@@ -483,7 +473,6 @@ function closeItemModal() {
     document.getElementById('itemModal').style.display = 'none';
 }
 
-// Gestión de items
 async function loadItems() {
     try {
         const querySnapshot = await getDocs(collection(db, 'items'));
@@ -598,7 +587,6 @@ async function clearAllItems() {
     }
 }
 
-// Tabla de items
 function updateItemsTable() {
     const tbody = document.getElementById('itemsTableBody');
     tbody.innerHTML = '';
@@ -662,7 +650,6 @@ function editItemInline(location) {
     }
 }
 
-// Búsqueda
 function handleSearch() {
     const query = document.getElementById('searchInput').value.toLowerCase();
     const originalQuery = document.getElementById('searchInput').value;
@@ -711,7 +698,6 @@ function highlightSearchResults(query) {
     });
 }
 
-// Sugerencias
 function showSuggestions(query) {
     const suggestionsDiv = document.getElementById('searchSuggestions');
     suggestionsDiv.innerHTML = '';
@@ -742,7 +728,6 @@ function showSuggestions(query) {
     suggestionsDiv.classList.remove('hidden');
 }
 
-// Paginación
 function previousPage() {
     if (currentPage > 1) {
         currentPage--;
@@ -773,7 +758,6 @@ function nextCatalogPage() {
     }
 }
 
-// Configuración del almacén
 async function loadWarehouseConfig() {
     try {
         const configDoc = await getDoc(doc(db, 'config', 'warehouse'));
@@ -781,28 +765,37 @@ async function loadWarehouseConfig() {
             warehouseConfig = configDoc.data();
             if (!Array.isArray(warehouseConfig.aisleConfigs)) {
                 console.warn('aisleConfigs is not an array, initializing with defaults');
-                warehouseConfig.aisleConfigs = Array(warehouseConfig.pasillos || 4).fill({ estantes: 4, casillas: 6 });
+                warehouseConfig.aisleConfigs = Array(warehouseConfig.pasillos || 4).fill().map(() => ({ estantes: 4, casillas: 6 }));
+                await saveWarehouseConfig();
             }
         } else {
             warehouseConfig = {
                 pasillos: 4,
-                aisleConfigs: Array(4).fill({ estantes: 4, casillas: 6 })
+                aisleConfigs: Array(4).fill().map(() => ({ estantes: 4, casillas: 6 }))
             };
             await saveWarehouseConfig();
         }
+        document.getElementById('pasillosInput').value = warehouseConfig.pasillos;
     } catch (error) {
         console.error('Error al cargar configuración:', error);
         warehouseConfig = {
             pasillos: 4,
-            aisleConfigs: Array(4).fill({ estantes: 4, casillas: 6 })
+            aisleConfigs: Array(4).fill().map(() => ({ estantes: 4, casillas: 6 }))
         };
         await saveWarehouseConfig();
+        document.getElementById('pasillosInput').value = warehouseConfig.pasillos;
     }
 }
 
 async function saveWarehouseConfig() {
     try {
-        await setDoc(doc(db, 'config', 'warehouse'), warehouseConfig);
+        await setDoc(doc(db, 'config', 'warehouse'), {
+            pasillos: warehouseConfig.pasillos,
+            aisleConfigs: warehouseConfig.aisleConfigs.map(config => ({
+                estantes: parseInt(config.estantes) || 4,
+                casillas: parseInt(config.casillas) || 6
+            }))
+        });
     } catch (error) {
         console.error('Error al guardar configuración:', error);
     }
@@ -813,12 +806,10 @@ function updateAisleConfigs() {
     const configsDiv = document.getElementById('aisleConfigs');
     configsDiv.innerHTML = '';
 
-    if (!Array.isArray(warehouseConfig.aisleConfigs)) {
-        warehouseConfig.aisleConfigs = Array(pasillos).fill({ estantes: 4, casillas: 6 });
-    }
-
     warehouseConfig.pasillos = pasillos;
-    if (warehouseConfig.aisleConfigs.length > pasillos) {
+    if (!Array.isArray(warehouseConfig.aisleConfigs)) {
+        warehouseConfig.aisleConfigs = Array(pasillos).fill().map(() => ({ estantes: 4, casillas: 6 }));
+    } else if (warehouseConfig.aisleConfigs.length > pasillos) {
         warehouseConfig.aisleConfigs = warehouseConfig.aisleConfigs.slice(0, pasillos);
     } else {
         while (warehouseConfig.aisleConfigs.length < pasillos) {
@@ -842,12 +833,11 @@ function updateAisleConfigs() {
         const estantesInput = document.createElement('input');
         estantesInput.type = 'number';
         estantesInput.className = 'config-input';
-        estantesInput.value = warehouseConfig.aisleConfigs[p-1]?.estantes || 4;
+        estantesInput.value = warehouseConfig.aisleConfigs[p-1].estantes || 4;
         estantesInput.min = 1;
         estantesInput.max = 8;
         estantesInput.onchange = () => {
             warehouseConfig.aisleConfigs[p-1].estantes = parseInt(estantesInput.value) || 4;
-            saveWarehouseConfig();
         };
         estantesGroup.appendChild(estantesLabel);
         estantesGroup.appendChild(estantesInput);
@@ -861,12 +851,11 @@ function updateAisleConfigs() {
         const casillasInput = document.createElement('input');
         casillasInput.type = 'number';
         casillasInput.className = 'config-input';
-        casillasInput.value = warehouseConfig.aisleConfigs[p-1]?.casillas || 6;
+        casillasInput.value = warehouseConfig.aisleConfigs[p-1].casillas || 6;
         casillasInput.min = 1;
         casillasInput.max = 10;
         casillasInput.onchange = () => {
             warehouseConfig.aisleConfigs[p-1].casillas = parseInt(casillasInput.value) || 6;
-            saveWarehouseConfig();
         };
         casillasGroup.appendChild(casillasLabel);
         casillasGroup.appendChild(casillasInput);
@@ -879,7 +868,8 @@ function updateAisleConfigs() {
 async function applyChanges() {
     try {
         await saveWarehouseConfig();
-        await loadItems();
+        await loadWarehouseConfig();
+        updateAisleConfigs();
         generateWarehouse();
         updateLocationSelectors();
         showNotification('Configuración aplicada correctamente');
@@ -892,11 +882,12 @@ async function applyChanges() {
 function revertChanges() {
     loadWarehouseConfig().then(() => {
         updateAisleConfigs();
+        generateWarehouse();
+        updateLocationSelectors();
         showNotification('Cambios revertidos');
     });
 }
 
-// Importar/Exportar datos
 function exportData() {
     const data = {
         config: warehouseConfig,
@@ -948,7 +939,7 @@ async function importFromJSON(data) {
     if (data.config) {
         warehouseConfig = data.config;
         if (!Array.isArray(warehouseConfig.aisleConfigs)) {
-            warehouseConfig.aisleConfigs = Array(warehouseConfig.pasillos || 4).fill({ estantes: 4, casillas: 6 });
+            warehouseConfig.aisleConfigs = Array(warehouseConfig.pasillos || 4).fill().map(() => ({ estantes: 4, casillas: 6 }));
         }
         await saveWarehouseConfig();
         document.getElementById('pasillosInput').value = warehouseConfig.pasillos;
@@ -1015,7 +1006,6 @@ async function importFromCSV(csvText) {
     updateLocationSelectors();
 }
 
-// Gestión del catálogo
 async function loadCatalog() {
     try {
         const querySnapshot = await getDocs(collection(db, 'catalog'));
@@ -1224,7 +1214,6 @@ async function clearCatalog() {
     }
 }
 
-// Autocompletado de descripción
 function autoFillDescription() {
     const code = document.getElementById('itemCode').value.trim().toUpperCase();
     const descriptionInput = document.getElementById('itemDescription');
@@ -1239,7 +1228,6 @@ function autoFillModalDescription() {
     descriptionInput.value = catalogItem ? catalogItem.description : '';
 }
 
-// Notificaciones
 function showNotification(message) {
     const existing = document.querySelector('.notification');
     if (existing) {
@@ -1265,7 +1253,6 @@ function showNotification(message) {
     }, 3000);
 }
 
-// Cerrar modales al hacer clic fuera
 window.addEventListener('click', function(event) {
     const casillModal = document.getElementById('casillModal');
     if (event.target === casillModal) {
@@ -1277,7 +1264,6 @@ window.addEventListener('click', function(event) {
     }
 });
 
-// Atajos de teclado
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeCasillModal();
@@ -1298,7 +1284,6 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// Funciones globales
 window.addItem = addItem;
 window.removeItem = removeItem;
 window.clearAllItems = clearAllItems;
