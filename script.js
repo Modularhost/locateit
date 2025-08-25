@@ -211,9 +211,8 @@ function drawWarehouseLayout() {
         ctx.strokeStyle = '#2c3e50';
         ctx.lineWidth = 2;
 
-        // CORRECCIÓN: Usar las dimensiones directamente sin intercambiar
-        const width = aisle.width;  // Usar width tal como está almacenado
-        const height = aisle.height; // Usar height tal como está almacenado
+        const width = aisle.width;
+        const height = aisle.height;
 
         if (isDragging && draggedAisle && draggedAisle.id === aisle.id) {
             ctx.fillStyle = 'rgba(0, 123, 255, 0.3)';
@@ -229,17 +228,8 @@ function drawWarehouseLayout() {
         const textX = aisle.x + width / 2;
         const textY = aisle.y + height / 2;
 
-        // El texto se rota solo para pasillos horizontales (cuando width > height)
-        if (aisle.orientation === 'horizontal') {
-            ctx.save();
-            ctx.translate(textX, textY);
-            ctx.rotate(-Math.PI / 2);
-            ctx.fillText(`Pasillo ${aisle.id} (${itemCount})`, 0, 0);
-            ctx.restore();
-        } else {
-            // Para pasillos verticales, el texto va normal
-            ctx.fillText(`Pasillo ${aisle.id} (${itemCount})`, textX, textY);
-        }
+        // Texto siempre horizontal, sin rotación
+        ctx.fillText(`Pasillo ${aisle.id} (${itemCount})`, textX, textY);
     });
 }
 
@@ -256,8 +246,8 @@ function handleCanvasMouseDown(event) {
 
     const { x, y } = getMousePosition(event);
     draggedAisle = layoutConfig.aisles.find(aisle => {
-        const width = aisle.width;   // Usar dimensiones directas
-        const height = aisle.height; // Usar dimensiones directas
+        const width = aisle.width;
+        const height = aisle.height;
         return x >= aisle.x && x <= aisle.x + width &&
                y >= aisle.y && y <= aisle.y + height;
     });
@@ -293,7 +283,7 @@ function handleCanvasMouseMove(event) {
                y >= aisle.y && y <= aisle.y + height;
     });
 
-    canvas.style.cursor = hoveredAisle ? 'pointer' : 'default'; // Cambiar cursor a 'pointer' para indicar que es seleccionable
+    canvas.style.cursor = hoveredAisle ? 'pointer' : 'default';
     drawWarehouseLayout();
     if (hoveredAisle) {
         const ctx = canvas.getContext('2d');
@@ -307,15 +297,8 @@ function handleCanvasMouseMove(event) {
         ctx.textBaseline = 'middle';
         const textX = hoveredAisle.x + width / 2;
         const textY = hoveredAisle.y + height / 2;
-        if (hoveredAisle.orientation === 'horizontal') {
-            ctx.save();
-            ctx.translate(textX, textY);
-            ctx.rotate(-Math.PI / 2);
-            ctx.fillText(`Pasillo ${hoveredAisle.id} (${allItems.filter(item => item.location.startsWith(`${hoveredAisle.id}-`)).length})`, 0, 0);
-            ctx.restore();
-        } else {
-            ctx.fillText(`Pasillo ${hoveredAisle.id} (${allItems.filter(item => item.location.startsWith(`${hoveredAisle.id}-`)).length})`, textX, textY);
-        }
+        // Texto siempre horizontal, sin rotación
+        ctx.fillText(`Pasillo ${hoveredAisle.id} (${allItems.filter(item => item.location.startsWith(`${hoveredAisle.id}-`)).length})`, textX, textY);
     }
 }
 
@@ -332,7 +315,7 @@ async function handleCanvasMouseUp() {
 }
 
 function handleCanvasClick(event) {
-    if (isDragging) return; // Ignorar clics durante el arrastre
+    if (isDragging) return;
 
     const { x, y } = getMousePosition(event);
     const clickedAisle = layoutConfig.aisles.find(aisle => {
@@ -346,14 +329,11 @@ function handleCanvasClick(event) {
         clickCount++;
         
         if (clickCount === 1) {
-            // Primer clic - esperar por un posible segundo clic
             clickTimeout = setTimeout(() => {
-                // Solo un clic - no hacer nada (evitar cambio a Mapa)
                 clickCount = 0;
                 clickTimeout = null;
-            }, 300); // 300ms para detectar doble clic
+            }, 300);
         } else if (clickCount === 2) {
-            // Doble clic - cambiar a la vista Mapa
             clearTimeout(clickTimeout);
             clickCount = 0;
             clickTimeout = null;
@@ -362,7 +342,6 @@ function handleCanvasClick(event) {
             generateWarehouse();
         }
     } else {
-        // Clic fuera de cualquier pasillo - resetear contador
         clickCount = 0;
         if (clickTimeout) {
             clearTimeout(clickTimeout);
