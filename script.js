@@ -1,4 +1,3 @@
-
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot, connectFirestoreEmulator, updateDoc, arrayUnion, arrayRemove } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
@@ -144,9 +143,16 @@ async function loadLayoutConfig() {
                     y: 50,
                     width: 50,
                     height: 200,
-                    orientation: 'vertical'
+                    orientation: index % 2 === 0 ? 'vertical' : 'horizontal'
                 }));
                 await saveLayoutConfig();
+            } else {
+                // Asegurar que cada pasillo tenga una orientación válida
+                layoutConfig.aisles.forEach(aisle => {
+                    if (!['vertical', 'horizontal'].includes(aisle.orientation)) {
+                        aisle.orientation = 'vertical';
+                    }
+                });
             }
         } else {
             layoutConfig = {
@@ -179,7 +185,16 @@ async function loadLayoutConfig() {
 
 async function saveLayoutConfig() {
     try {
-        await setDoc(doc(db, 'config', 'layout'), layoutConfig);
+        await setDoc(doc(db, 'config', 'layout'), {
+            aisles: layoutConfig.aisles.map(aisle => ({
+                id: aisle.id,
+                x: aisle.x,
+                y: aisle.y,
+                width: aisle.width,
+                height: aisle.height,
+                orientation: aisle.orientation
+            }))
+        });
     } catch (error) {
         console.error('Error al guardar configuración de disposición:', error);
     }
@@ -390,6 +405,7 @@ function updateLayoutConfigs() {
         xInput.addEventListener('change', () => {
             layoutConfig.aisles[p-1].x = parseInt(xInput.value) || 50;
             drawWarehouseLayout();
+            saveLayoutConfig(); // Guardar al cambiar posición X
         });
         xGroup.appendChild(xLabel);
         xGroup.appendChild(xInput);
@@ -409,6 +425,7 @@ function updateLayoutConfigs() {
         yInput.addEventListener('change', () => {
             layoutConfig.aisles[p-1].y = parseInt(yInput.value) || 50;
             drawWarehouseLayout();
+            saveLayoutConfig(); // Guardar al cambiar posición Y
         });
         yGroup.appendChild(yLabel);
         yGroup.appendChild(yInput);
@@ -428,6 +445,7 @@ function updateLayoutConfigs() {
         widthInput.addEventListener('change', () => {
             layoutConfig.aisles[p-1].width = parseInt(widthInput.value) || 50;
             drawWarehouseLayout();
+            saveLayoutConfig(); // Guardar al cambiar ancho
         });
         widthGroup.appendChild(widthLabel);
         widthGroup.appendChild(widthInput);
@@ -447,6 +465,7 @@ function updateLayoutConfigs() {
         heightInput.addEventListener('change', () => {
             layoutConfig.aisles[p-1].height = parseInt(heightInput.value) || 200;
             drawWarehouseLayout();
+            saveLayoutConfig(); // Guardar al cambiar alto
         });
         heightGroup.appendChild(heightLabel);
         heightGroup.appendChild(heightInput);
@@ -465,12 +484,8 @@ function updateLayoutConfigs() {
         `;
         orientationSelect.addEventListener('change', () => {
             layoutConfig.aisles[p-1].orientation = orientationSelect.value;
-            const temp = layoutConfig.aisles[p-1].width;
-            layoutConfig.aisles[p-1].width = layoutConfig.aisles[p-1].height;
-            layoutConfig.aisles[p-1].height = temp;
-            widthInput.value = layoutConfig.aisles[p-1].width;
-            heightInput.value = layoutConfig.aisles[p-1].height;
             drawWarehouseLayout();
+            saveLayoutConfig(); // Guardar al cambiar orientación
         });
         orientationGroup.appendChild(orientationLabel);
         orientationGroup.appendChild(orientationSelect);
