@@ -3,155 +3,260 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LocateIt - Gestión de Inventario</title>
+    <title>Mapa de Bodega</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <header>
-        <h1>LocateIt - Gestión de Inventario</h1>
-        <nav>
-            <button data-view="croquis" class="active">Croquis</button>
-            <button data-view="mapa">Mapa</button>
-            <button data-view="items">Ítems (<span id="itemsCount">0</span>)</button>
-            <button data-view="catalogo">Catálogo (<span id="catalogoCount">0</span>)</button>
-            <button data-view="ajustes">Ajustes</button>
-        </nav>
-        <div class="search-container">
-            <input type="text" id="searchInput" placeholder="Buscar por código, descripción o ubicación">
-            <div id="searchSuggestions" class="suggestions hidden"></div>
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">📦</div>
+            <h1>Mapa de Bodega</h1>
         </div>
-    </header>
-
-    <!-- Vista Croquis -->
-    <div id="croquis-view" class="section">
-        <h2>Croquis de la Bodega</h2>
-        <canvas id="warehouseCanvas" style="width: 100%; height: 600px;"></canvas>
-        <p style="color: #666; margin-top: 1rem;">Haz clic en un pasillo para ver su contenido en el mapa.</p>
-    </div>
-
-    <!-- Vista Mapa -->
-    <div id="mapa-view" class="section hidden">
-        <h2>Mapa de la Bodega</h2>
-        <div id="warehouseGrid"></div>
-    </div>
-
-    <!-- Vista Ítems -->
-    <div id="items-view" class="section hidden">
-        <h2>Ítems en Inventario</h2>
-        <div class="search-container">
-            <input type="text" id="itemsSearchInput" placeholder="Buscar ítems...">
-        </div>
-        <table>
-            <thead>
-                <tr>
-                    <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
-                    <th>Código <span id="sort-code" onclick="sortItems('code')">↕️</span></th>
-                    <th>Descripción <span id="sort-description" onclick="sortItems('description')">↕️</span></th>
-                    <th>Ubicación <span id="sort-location" onclick="sortItems('location')">↕️</span></th>
-                    <th>Fecha <span id="sort-timestamp" onclick="sortItems('timestamp')">↕️</span></th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="itemsTableBody"></tbody>
-        </table>
-        <div class="pagination">
-            <button id="prevBtn" onclick="previousPage()">Anterior</button>
-            <span>Página <span id="currentPage">1</span> de <span id="totalPages">1</span></span>
-            <button id="nextBtn" onclick="nextPage()">Siguiente</button>
-        </div>
-        <div id="bulkActions" style="display: none;">
-            <button onclick="bulkDelete()">Eliminar seleccionados</button>
-            <button onclick="bulkExport()">Exportar seleccionados</button>
-        </div>
-        <div class="form-container">
-            <h3>Agregar Ítem</h3>
-            <input type="text" id="itemCode" placeholder="Código" oninput="autoFillDescription()">
-            <input type="text" id="itemDescription" placeholder="Descripción">
-            <select id="pasilloSelect" onchange="updateEstanteSelect()"></select>
-            <select id="estanteSelect" onchange="updateCasillaSelect()" disabled></select>
-            <select id="casillaSelect" disabled></select>
-            <button onclick="addItem()">Agregar</button>
-        </div>
-        <button onclick="exportData()">Exportar datos</button>
-        <input type="file" id="importData" accept=".json" onchange="importData(event)">
-    </div>
-
-    <!-- Vista Catálogo -->
-    <div id="catalogo-view" class="section hidden">
-        <h2>Catálogo de Productos</h2>
-        <div class="search-container">
-            <input type="text" id="catalogSearchInput" placeholder="Buscar en catálogo...">
-        </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Código <span id="sort-catalog-code" onclick="sortCatalog('code')">↕️</span></th>
-                    <th>Descripción <span id="sort-catalog-description" onclick="sortCatalog('description')">↕️</span></th>
-                    <th>En bodega</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="catalogTableBody"></tbody>
-        </table>
-        <div class="pagination">
-            <button id="prevCatalogBtn" onclick="previousCatalogPage()">Anterior</button>
-            <span>Página <span id="currentCatalogPage">1</span> de <span id="totalCatalogPages">1</span></span>
-            <button id="nextCatalogBtn" onclick="nextCatalogPage()">Siguiente</button>
-        </div>
-        <div class="form-container">
-            <h3>Agregar al Catálogo</h3>
-            <input type="text" id="catalogCode" placeholder="Código">
-            <input type="text" id="catalogDescription" placeholder="Descripción">
-            <button onclick="addToCatalog()">Agregar</button>
-        </div>
-        <button onclick="exportCatalog()">Exportar catálogo</button>
-        <input type="file" id="importCatalog" accept=".csv" onchange="importCatalogCSV(event)">
-        <button onclick="clearCatalog()">Limpiar catálogo</button>
-    </div>
-
-    <!-- Vista Ajustes -->
-    <div id="ajustes-view" class="section hidden">
-        <h2>Ajustes de la Bodega</h2>
-        <div class="form-container">
-            <h3>Configuración General</h3>
-            <div class="config-group">
-                <label class="config-label">Número de Pasillos</label>
-                <input id="pasillosInput" type="number" min="1" max="20" value="4">
+        <div class="nav-controls">
+            <div class="search-container">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-input" placeholder="Buscar por nombre, etiqueta o ubicación..." id="searchInput">
+                <div id="searchSuggestions" class="suggestions hidden"></div>
             </div>
-            <div id="aisleConfigs"></div>
-            <h3>Configuración del Croquis</h3>
-            <div id="layoutConfigs"></div>
-            <button id="applyBtn">Aplicar cambios</button>
-            <button onclick="revertChanges()">Revertir cambios</button>
+            <button class="nav-btn active" data-view="croquis">Croquis</button>
+            <button class="nav-btn" data-view="mapa">Mapa</button>
+            <button class="nav-btn" data-view="items">Items</button>
+            <button class="nav-btn" data-view="catalogo">Catálogo</button>
+            <button class="nav-btn" data-view="ajustes">Ajustes</button>
+            <button class="nav-btn" id="exportBtn">Exportar</button>
+            <button class="nav-btn" id="importBtn">Importar</button>
+            <input type="file" id="importFile" accept=".json,.csv" style="display: none;" onchange="importData(event)">
         </div>
     </div>
 
-    <!-- Modal para gestionar casilla -->
+    <div class="container">
+        <!-- Vista Croquis -->
+        <div id="croquis-view" class="section">
+            <h2>Croquis de la Bodega</h2>
+            <canvas id="warehouseCanvas" style="width: 100%; height: 600px;"></canvas>
+            <p style="color: #666; margin-top: 1rem;">Haz clic en un pasillo para ver su contenido en el mapa.</p>
+        </div>
+
+        <!-- Vista Mapa -->
+        <div id="mapa-view" class="section hidden">
+            <h2>Mapa visual</h2>
+            <div id="warehouseGrid" class="warehouse-grid">
+                <!-- Pasillos se generan dinámicamente -->
+            </div>
+            <p style="color: #666; margin-top: 1rem;">Haz clic en una casilla para ver o agregar contenido.</p>
+            <p class="auto-save">Guardado automático en Firebase. Exporta un respaldo si es importante.</p>
+        </div>
+
+        <!-- Vista Items -->
+        <div id="items-view" class="section hidden">
+            <h2>Todos los items (<span id="itemsCount">0</span>)</h2>
+            
+            <div class="add-item-form">
+                <div class="config-group">
+                    <input type="text" id="itemCode" placeholder="Código del item" class="config-input" oninput="autoFillDescription()">
+                </div>
+                <div class="config-group">
+                    <input type="text" id="itemDescription" placeholder="Descripción (se llena automáticamente)" class="config-input" readonly>
+                </div>
+            </div>
+            
+            <div class="location-selector">
+                <h4 style="margin-bottom: 1rem; color: #2c3e50;">Seleccionar Ubicación:</h4>
+                <div class="location-controls">
+                    <div class="config-group">
+                        <label class="config-label">Pasillo</label>
+                        <select id="pasilloSelect" class="config-input">
+                            <option value="">Seleccionar pasillo</option>
+                        </select>
+                    </div>
+                    <div class="config-group">
+                        <label class="config-label">Estante</label>
+                        <select id="estanteSelect" class="config-input" disabled>
+                            <option value="">Seleccionar estante</option>
+                        </select>
+                    </div>
+                    <div class="config-group">
+                        <label class="config-label">Casilla</label>
+                        <select id="casillaSelect" class="config-input" disabled>
+                            <option value="">Seleccionar casilla</option>
+                        </select>
+                    </div>
+                    <div class="config-group" style="display: flex; align-items: end;">
+                        <button class="btn btn-primary" onclick="addItem()">Ubicar Item</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="search-container" style="margin-bottom: 1rem;">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-input" placeholder="Buscar por nombre, etiqueta o ubicación..." id="itemsSearchInput">
+            </div>
+
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>
+                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                        </th>
+                        <th style="cursor: pointer;" onclick="sortItems('code')">
+                            Código <span id="sort-code">↕️</span>
+                        </th>
+                        <th>Descripción</th>
+                        <th style="cursor: pointer;" onclick="sortItems('location')">
+                            Ubicación <span id="sort-location">↕️</span>
+                        </th>
+                        <th style="cursor: pointer;" onclick="sortItems('timestamp')">
+                            Fecha <span id="sort-timestamp">↕️</span>
+                        </th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="itemsTableBody">
+                    <!-- Items se cargan dinámicamente -->
+                </tbody>
+            </table>
+
+            <div class="bulk-actions" style="margin: 1rem 0; display: none;" id="bulkActions">
+                <button class="btn btn-secondary" onclick="bulkDelete()">Eliminar Seleccionados</button>
+                <button class="btn btn-secondary" onclick="bulkExport()">Exportar Seleccionados</button>
+            </div>
+
+            <div class="pagination">
+                <button class="btn btn-secondary" id="prevBtn" onclick="previousPage()">Anterior</button>
+                <span>Página <span id="currentPage">1</span> de <span id="totalPages">1</span></span>
+                <button class="btn btn-secondary" id="nextBtn" onclick="nextPage()">Siguiente</button>
+            </div>
+
+            <button class="btn btn-secondary" onclick="clearAllItems()" style="margin-top: 1rem;">Vaciar todo</button>
+        </div>
+
+        <!-- Vista Catálogo -->
+        <div id="catalogo-view" class="section hidden">
+            <h2>Catálogo de Productos (<span id="catalogoCount">0</span>)</h2>
+            
+            <div class="add-item-form">
+                <div class="config-group">
+                    <input type="text" id="catalogCode" placeholder="Código del producto" class="config-input">
+                </div>
+                <div class="config-group">
+                    <input type="text" id="catalogDescription" placeholder="Descripción del producto" class="config-input">
+                </div>
+                <div class="config-group" style="display: flex; align-items: end;">
+                    <button class="btn btn-primary" onclick="addToCatalog()">Agregar al Catálogo</button>
+                </div>
+            </div>
+
+            <div class="search-container" style="margin-bottom: 1rem;">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-input" placeholder="Buscar en catálogo..." id="catalogSearchInput">
+            </div>
+
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th style="cursor: pointer;" onclick="sortCatalog('code')">
+                            Código <span id="sort-catalog-code">↕️</span>
+                        </th>
+                        <th style="cursor: pointer;" onclick="sortCatalog('description')">
+                            Descripción <span id="sort-catalog-description">↕️</span>
+                        </th>
+                        <th>En Bodega</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="catalogTableBody">
+                    <!-- Productos se cargan dinámicamente -->
+                </tbody>
+            </table>
+
+            <div class="pagination">
+                <button class="btn btn-secondary" id="prevCatalogBtn" onclick="previousCatalogPage()">Anterior</button>
+                <span>Página <span id="currentCatalogPage">1</span> de <span id="totalCatalogPages">1</span></span>
+                <button class="btn btn-secondary" id="nextCatalogBtn" onclick="nextCatalogPage()">Siguiente</button>
+            </div>
+
+            <div style="margin-top: 2rem;">
+                <button class="btn btn-secondary" onclick="exportCatalog()">Exportar Catálogo</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('importCatalogFile').click()">Importar Catálogo CSV</button>
+                <input type="file" id="importCatalogFile" accept=".csv" style="display: none;" onchange="importCatalogCSV(event)">
+                <button class="btn btn-secondary" onclick="clearCatalog()" style="margin-left: 1rem; background: #dc3545; color: white;">Limpiar Catálogo</button>
+            </div>
+        </div>
+
+        <!-- Vista Ajustes -->
+        <div id="ajustes-view" class="section hidden">
+            <h2>Ajustar estructura de la bodega</h2>
+            
+            <div class="config-section">
+                <div class="config-group">
+                    <label class="config-label">Número de Pasillos</label>
+                    <input type="number" id="pasillosInput" class="config-input" value="4" min="1" max="10">
+                </div>
+            </div>
+
+            <div id="aisleConfigs" class="aisle-configs">
+                <!-- Configuraciones por pasillo se generan dinámicamente -->
+            </div>
+
+            <h3>Configuración del Croquis</h3>
+            <div id="layoutConfigs" class="aisle-configs">
+                <!-- Configuraciones de disposición se generan dinámicamente -->
+            </div>
+
+            <p style="color: #666; margin-bottom: 1.5rem;">Estantes se nombrarán: A, B, C, D, etc.</p>
+
+            <div style="display: flex; gap: 1rem;">
+                <button class="btn btn-primary" id="applyBtn">Aplicar cambios</button>
+                <button class="btn btn-secondary" onclick="revertChanges()">Revertir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para gestionar casillas -->
     <div id="casillModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeCasillModal()">&times;</span>
-            <h2 id="modalTitle"></h2>
-            <div class="form-container">
-                <input type="text" id="modalItemCode" placeholder="Código" oninput="autoFillModalDescription()">
-                <input type="text" id="modalItemDescription" placeholder="Descripción">
-                <button onclick="saveItemToModal()">Agregar</button>
+            <h3 id="modalTitle">Gestionar Casilla</h3>
+            <div id="modalItemsList" style="margin-bottom: 1rem;"></div>
+            <div style="margin: 1rem 0;">
+                <label class="config-label">Código del item:</label>
+                <input type="text" id="modalItemCode" class="config-input" oninput="autoFillModalDescription()">
             </div>
-            <h3>Ítems en la casilla</h3>
-            <div id="modalItemsList"></div>
+            <div style="margin: 1rem 0;">
+                <label class="config-label">Descripción:</label>
+                <input type="text" id="modalItemDescription" class="config-input" readonly>
+            </div>
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <button class="btn btn-primary" onclick="saveItemToModal()">Guardar</button>
+                <button class="btn btn-secondary" onclick="closeCasillModal()">Cerrar</button>
+            </div>
         </div>
     </div>
 
-    <!-- Modal para ver ítem -->
+    <!-- Modal para ver información del item -->
     <div id="itemModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeItemModal()">&times;</span>
-            <h2>Detalles del Ítem</h2>
-            <p><strong>Código:</strong> <span id="itemCodeView"></span></p>
-            <p><strong>Descripción:</strong> <span id="itemDescriptionView"></span></p>
-            <p><strong>Ubicación:</strong> <span id="itemLocationView"></span></p>
+            <h3>Información del Item</h3>
+            <div class="item-info">
+                <label class="config-label">Código:</label>
+                <span id="itemCodeView"></span>
+            </div>
+            <div class="item-info">
+                <label class="config-label">Descripción:</label>
+                <span id="itemDescriptionView"></span>
+            </div>
+            <div class="item-info">
+                <label class="config-label">Ubicación:</label>
+                <span id="itemLocationView"></span>
+            </div>
+            <div style="display: flex; justify-content: flex-end; margin-top: 2rem;">
+                <button class="btn btn-secondary" onclick="closeItemModal()">Cerrar</button>
+            </div>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Firebase SDK -->
+    <script type="module" src="script.js"></script>
 </body>
 </html>
