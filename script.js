@@ -60,6 +60,8 @@ let isDragging = false;
 let draggedAisle = null;
 let dragStartX = 0;
 let dragStartY = 0;
+let clickTimeout = null;
+let clickCount = 0;
 
 document.addEventListener('DOMContentLoaded', async function() {
     await loadWarehouseConfig();
@@ -341,9 +343,28 @@ function handleCanvasClick(event) {
     });
 
     if (clickedAisle) {
-        selectedAisle = clickedAisle.id;
-        switchView({ target: { dataset: { view: 'mapa' } } });
-        generateWarehouse();
+        clickCount++;
+        
+        if (clickCount === 1) {
+            // Primer clic - esperar por un posible segundo clic
+            clickTimeout = setTimeout(() => {
+                // Solo un clic - no hacer nada (permitir arrastre)
+                clickCount = 0;
+            }, 300); // 300ms para detectar doble clic
+        } else if (clickCount === 2) {
+            // Doble clic - cambiar al mapa
+            clearTimeout(clickTimeout);
+            clickCount = 0;
+            selectedAisle = clickedAisle.id;
+            switchView({ target: { dataset: { view: 'mapa' } } });
+            generateWarehouse();
+        }
+    } else {
+        // Clic fuera de cualquier pasillo - resetear contador
+        clickCount = 0;
+        if (clickTimeout) {
+            clearTimeout(clickTimeout);
+        }
     }
 }
 
