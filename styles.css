@@ -444,6 +444,23 @@ body {
     color: #666;
 }
 
+.location-details {
+    list-style: none;
+    padding: 0;
+    margin: 0.4rem 0 0 0;
+}
+
+.location-details li {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 0.3rem;
+}
+
+.location-details li strong {
+    color: #2c3e50;
+    margin-right: 0.3rem;
+}
+
 #modalItemsList {
     max-height: 180px;
     overflow-y: auto;
