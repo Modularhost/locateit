@@ -275,8 +275,8 @@ function handleCanvasMouseMove(event) {
     const { x, y } = getMousePosition(event);
 
     if (isDragging && draggedAisle) {
-        const width = draggedAisle.width;   // Usar dimensiones directas
-        const height = draggedAisle.height; // Usar dimensiones directas
+        const width = draggedAisle.width;
+        const height = draggedAisle.height;
 
         draggedAisle.x = Math.max(0, Math.min(x - dragStartX, canvas.width / window.devicePixelRatio - width));
         draggedAisle.y = Math.max(0, Math.min(y - dragStartY, canvas.height / window.devicePixelRatio - height));
@@ -287,18 +287,18 @@ function handleCanvasMouseMove(event) {
     }
 
     const hoveredAisle = layoutConfig.aisles.find(aisle => {
-        const width = aisle.width;   // Usar dimensiones directas
-        const height = aisle.height; // Usar dimensiones directas
+        const width = aisle.width;
+        const height = aisle.height;
         return x >= aisle.x && x <= aisle.x + width &&
                y >= aisle.y && y <= aisle.y + height;
     });
 
-    canvas.style.cursor = hoveredAisle ? 'move' : 'default';
+    canvas.style.cursor = hoveredAisle ? 'pointer' : 'default'; // Cambiar cursor a 'pointer' para indicar que es seleccionable
     drawWarehouseLayout();
     if (hoveredAisle) {
         const ctx = canvas.getContext('2d');
-        const width = hoveredAisle.width;   // Usar dimensiones directas
-        const height = hoveredAisle.height; // Usar dimensiones directas
+        const width = hoveredAisle.width;
+        const height = hoveredAisle.height;
         ctx.fillStyle = 'rgba(0, 123, 255, 0.2)';
         ctx.fillRect(hoveredAisle.x, hoveredAisle.y, width, height);
         ctx.fillStyle = '#2c3e50';
@@ -332,12 +332,12 @@ async function handleCanvasMouseUp() {
 }
 
 function handleCanvasClick(event) {
-    if (isDragging) return;
+    if (isDragging) return; // Ignorar clics durante el arrastre
 
     const { x, y } = getMousePosition(event);
     const clickedAisle = layoutConfig.aisles.find(aisle => {
-        const width = aisle.width;   // Usar dimensiones directas
-        const height = aisle.height; // Usar dimensiones directas
+        const width = aisle.width;
+        const height = aisle.height;
         return x >= aisle.x && x <= aisle.x + width &&
                y >= aisle.y && y <= aisle.y + height;
     });
@@ -348,13 +348,15 @@ function handleCanvasClick(event) {
         if (clickCount === 1) {
             // Primer clic - esperar por un posible segundo clic
             clickTimeout = setTimeout(() => {
-                // Solo un clic - no hacer nada (permitir arrastre)
+                // Solo un clic - no hacer nada (evitar cambio a Mapa)
                 clickCount = 0;
+                clickTimeout = null;
             }, 300); // 300ms para detectar doble clic
         } else if (clickCount === 2) {
-            // Doble clic - cambiar al mapa
+            // Doble clic - cambiar a la vista Mapa
             clearTimeout(clickTimeout);
             clickCount = 0;
+            clickTimeout = null;
             selectedAisle = clickedAisle.id;
             switchView({ target: { dataset: { view: 'mapa' } } });
             generateWarehouse();
@@ -364,6 +366,7 @@ function handleCanvasClick(event) {
         clickCount = 0;
         if (clickTimeout) {
             clearTimeout(clickTimeout);
+            clickTimeout = null;
         }
     }
 }
