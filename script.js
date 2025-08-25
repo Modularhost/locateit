@@ -138,6 +138,7 @@ async function loadLayoutConfig() {
         if (layoutDoc.exists()) {
             layoutConfig = layoutDoc.data();
             if (!Array.isArray(layoutConfig.aisles)) {
+                console.warn('layoutConfig.aisles no es un array, inicializando con valores predeterminados');
                 layoutConfig.aisles = Array(warehouseConfig.pasillos).fill().map((_, index) => ({
                     id: index + 1,
                     x: 50 + index * 120,
@@ -148,13 +149,14 @@ async function loadLayoutConfig() {
                 }));
                 await saveLayoutConfig();
             } else {
-                layoutConfig.aisles.forEach(aisle => {
-                    if (!['vertical', 'horizontal'].includes(aisle.orientation)) {
-                        aisle.orientation = 'vertical';
-                    }
-                });
+                layoutConfig.aisles = layoutConfig.aisles.map(aisle => ({
+                    ...aisle,
+                    orientation: ['vertical', 'horizontal'].includes(aisle.orientation) ? aisle.orientation : 'vertical'
+                }));
+                console.log('layoutConfig después de validar orientaciones:', layoutConfig);
             }
         } else {
+            console.warn('No se encontró layoutConfig, inicializando con valores predeterminados');
             layoutConfig = {
                 aisles: Array(warehouseConfig.pasillos).fill().map((_, index) => ({
                     id: index + 1,
@@ -167,7 +169,7 @@ async function loadLayoutConfig() {
             };
             await saveLayoutConfig();
         }
-        console.log('layoutConfig después de cargar:', layoutConfig);
+        console.log('layoutConfig final después de cargar:', layoutConfig);
     } catch (error) {
         console.error('Error al cargar configuración de disposición:', error);
         layoutConfig = {
@@ -186,17 +188,20 @@ async function loadLayoutConfig() {
 
 async function saveLayoutConfig() {
     try {
-        console.log('Guardando layoutConfig:', layoutConfig);
+        console.log('Guardando layoutConfig:', JSON.stringify(layoutConfig, null, 2));
         await setDoc(doc(db, 'config', 'layout'), {
             aisles: layoutConfig.aisles.map(aisle => ({
                 id: aisle.id,
-                x: aisle.x,
-                y: aisle.y,
-                width: aisle.width,
-                height: aisle.height,
-                orientation: aisle.orientation
+                x: parseInt(aisle.x) || 50,
+                y: parseInt(aisle.y) || 50,
+                width: parseInt(aisle.width) || 50,
+                height: parseInt(aisle.height) || 200,
+                orientation: aisle.orientation || 'vertical'
             }))
         });
+        console.log('layoutConfig guardado correctamente');
+        // Forzar recarga para asegurar sincronización
+        await loadLayoutConfig();
     } catch (error) {
         console.error('Error al guardar configuración de disposición:', error);
     }
@@ -216,7 +221,7 @@ function drawWarehouseLayout() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     layoutConfig.aisles.forEach(aisle => {
-        console.log(`Dibujando pasillo ${aisle.id} con orientación: ${aisle.orientation}`);
+        console.log(`Dibujando pasillo ${aisle.id} con orientación: ${aisle.orientation}, x: ${aisle.x}, y: ${aisle.y}, width: ${aisle.width}, height: ${aisle.height}`);
         const itemCount = allItems.filter(item => item.location.startsWith(`${aisle.id}-`)).length;
         ctx.fillStyle = itemCount > 0 ? '#e3f2fd' : '#ffffff';
         ctx.strokeStyle = '#2c3e50';
@@ -498,7 +503,8 @@ function updateLayoutConfigs() {
 
         layoutConfigsDiv.appendChild(layoutDiv);
     }
-    console.log('layoutConfig después de actualizar configs:', layoutConfig);
+    console.log('layoutConfig después de actualizar configs:', JSON.stringify(layoutConfig, null, 2));
+    drawWarehouseLayout();
 }
 
 function switchView(e) {
