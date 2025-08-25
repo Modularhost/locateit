@@ -18,7 +18,7 @@ body {
 
 .header {
     background: white;
-    padding: 1rem;
+    padding: 0.75rem;
     border-bottom: 1px solid #e1e8ed;
     display: flex;
     align-items: center;
@@ -29,6 +29,7 @@ body {
     left: 0;
     width: 100%;
     z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .logo {
@@ -51,45 +52,50 @@ body {
 }
 
 .logo h1 {
-    font-size: 1.3rem;
+    font-size: 1.1rem;
     color: #2c3e50;
 }
 
 .nav-controls {
     display: flex;
-    gap: 0.8rem;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
 }
 
 .search-container {
     position: relative;
     display: flex;
     align-items: center;
+    order: -1;
 }
 
 .search-input {
-    padding: 0.4rem 0.8rem 0.4rem 2rem;
+    padding: 0.4rem 0.6rem 0.4rem 1.8rem;
     border: 1px solid #ddd;
     border-radius: 6px;
-    font-size: 0.85rem;
-    width: 250px;
+    font-size: 0.8rem;
+    width: 200px;
+    max-width: 100%;
 }
 
 .search-icon {
     position: absolute;
-    left: 0.6rem;
+    left: 0.5rem;
     color: #666;
     z-index: 1;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
 }
 
 .nav-btn {
-    padding: 0.4rem 0.8rem;
+    padding: 0.4rem 0.6rem;
     border: none;
     border-radius: 5px;
     cursor: pointer;
     font-weight: 500;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     transition: all 0.2s;
+    white-space: nowrap;
 }
 
 .nav-btn.active {
@@ -110,43 +116,44 @@ body {
 .container {
     width: 100%;
     max-width: 1600px;
-    margin: 80px auto 0;
-    padding: 1rem;
+    margin: 70px auto 0;
+    padding: 0.75rem;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
-    min-height: calc(100vh - 80px);
+    min-height: calc(100vh - 70px);
 }
 
 .section {
     background: white;
     border-radius: 10px;
-    padding: 1rem;
-    margin-bottom: 1rem;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
     box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     width: 100%;
 }
 
 .section h2 {
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
     color: #2c3e50;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
 }
 
 #warehouseCanvas {
     border: 1px solid #e1e8ed;
     background: #fff;
     max-width: 100%;
-    height: 600px; /* Ajustado para coincidir con script.js */
+    height: 400px;
     border-radius: 6px;
+    touch-action: manipulation;
 }
 
 .warehouse-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 0.8rem;
-    min-height: 400px;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    min-height: 300px;
     width: 100%;
     overflow-x: auto;
 }
@@ -157,24 +164,25 @@ body {
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    min-width: 220px;
+    min-width: 100%;
 }
 
 .pasillo-header {
     background: #f8f9fa;
-    padding: 0.8rem;
+    padding: 0.6rem;
     font-weight: 600;
     color: #2c3e50;
     border-bottom: 1px solid #e1e8ed;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    text-align: center;
 }
 
 .estantes {
-    padding: 0.8rem;
+    padding: 0.6rem;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    gap: 0.8rem;
+    gap: 0.6rem;
 }
 
 .estante {
@@ -183,104 +191,110 @@ body {
 }
 
 .estante-label {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: #666;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.3rem;
+    font-weight: 600;
 }
 
 .casillas-grid {
     display: grid;
-    grid-template-columns: repeat(6, 40px);
-    gap: 0.4rem;
+    grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+    gap: 0.3rem;
     overflow-x: auto;
-    padding-bottom: 0.4rem;
+    padding-bottom: 0.3rem;
 }
 
 .casilla {
     aspect-ratio: 1;
     border: 1px solid #ddd;
-    border-radius: 3px;
+    border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
     background: white;
-    padding: 0.2rem;
-    min-width: 40px;
+    padding: 0.15rem;
+    min-width: 50px;
+    min-height: 50px;
     position: relative;
     text-align: center;
-    line-height: 1.2;
+    line-height: 1.1;
 }
 
 .casilla:hover {
     border-color: #007bff;
     background: #f0f8ff;
+    transform: scale(1.05);
 }
 
 .casilla.occupied {
     background: #e3f2fd;
     border-color: #2196f3;
     color: #1976d2;
-    font-weight: 500;
+    font-weight: 600;
 }
 
 .config-section {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
 }
 
 .aisle-configs {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 0.8rem;
-    margin-bottom: 1.5rem;
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
 }
 
 .aisle-config {
     background: #f8f9fa;
-    padding: 0.8rem;
+    padding: 0.6rem;
     border-radius: 6px;
     border: 1px solid #e1e8ed;
 }
 
 .aisle-config h3 {
-    margin-bottom: 0.8rem;
-    font-size: 0.9rem;
+    margin-bottom: 0.6rem;
+    font-size: 0.85rem;
     color: #2c3e50;
+    text-align: center;
 }
 
 .config-group {
     display: flex;
     flex-direction: column;
+    margin-bottom: 0.5rem;
 }
 
 .config-label {
     font-weight: 600;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.3rem;
     color: #2c3e50;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
 }
 
 .config-input {
     padding: 0.6rem;
     border: 1px solid #ddd;
     border-radius: 5px;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
 }
 
 .btn {
-    padding: 0.6rem 1.2rem;
+    padding: 0.6rem 1rem;
     border: none;
     border-radius: 5px;
     cursor: pointer;
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     transition: all 0.2s;
+    touch-action: manipulation;
 }
 
 .btn-primary {
@@ -298,15 +312,20 @@ body {
     transform: translateY(-1px);
 }
 
+.btn:active {
+    transform: translateY(0);
+}
+
 .items-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 0.8rem;
+    margin-top: 0.6rem;
+    font-size: 0.8rem;
 }
 
 .items-table th,
 .items-table td {
-    padding: 0.8rem;
+    padding: 0.5rem 0.3rem;
     text-align: left;
     border-bottom: 1px solid #e1e8ed;
 }
@@ -315,26 +334,29 @@ body {
     background: #f8f9fa;
     font-weight: 600;
     color: #2c3e50;
+    font-size: 0.75rem;
+    position: sticky;
+    top: 0;
 }
 
 .add-item-form {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 0.8rem;
-    margin-bottom: 1.2rem;
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
 }
 
 .location-selector {
     background: #f8f9fa;
-    padding: 1.2rem;
+    padding: 0.75rem;
     border-radius: 6px;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
 }
 
 .location-controls {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-    gap: 0.8rem;
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
     align-items: end;
 }
 
@@ -351,21 +373,30 @@ body {
 
 .modal-content {
     background: white;
-    margin: 10% auto;
-    padding: 1.5rem;
-    width: 90%;
-    max-width: 450px;
+    margin: 5% auto;
+    padding: 1rem;
+    width: 95%;
+    max-width: 400px;
     border-radius: 10px;
     position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 .close {
     position: absolute;
-    right: 0.8rem;
-    top: 0.8rem;
-    font-size: 1.2rem;
+    right: 0.6rem;
+    top: 0.6rem;
+    font-size: 1.5rem;
     cursor: pointer;
     color: #666;
+    background: #f8f9fa;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .hidden {
@@ -376,32 +407,36 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 0.8rem;
-    margin-top: 1.5rem;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
 }
 
 .notification {
     position: fixed;
     top: 80px;
-    right: 20px;
-    padding: 0.8rem 1.2rem;
+    right: 10px;
+    left: 10px;
+    padding: 0.6rem;
     background: #d4edda;
     color: #155724;
     border: 1px solid #c3e6cb;
     border-radius: 5px;
     z-index: 1002;
-    transform: translateX(100%);
+    transform: translateY(-100%);
     transition: transform 0.3s;
+    text-align: center;
+    font-size: 0.85rem;
 }
 
 .notification.show {
-    transform: translateX(0);
+    transform: translateY(0);
 }
 
 .auto-save {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: #666;
-    margin-top: 1.5rem;
+    margin-top: 1rem;
     text-align: center;
 }
 
@@ -413,7 +448,7 @@ body {
     background: white;
     border: 1px solid #ddd;
     border-radius: 5px;
-    max-height: 180px;
+    max-height: 150px;
     overflow-y: auto;
     z-index: 1000;
     box-shadow: 0 2px 6px rgba(0,0,0,0.1);
@@ -426,9 +461,10 @@ body {
 }
 
 .suggestions li {
-    padding: 0.4rem 0.8rem;
+    padding: 0.4rem 0.6rem;
     cursor: pointer;
     border-bottom: 1px solid #e1e8ed;
+    font-size: 0.8rem;
 }
 
 .suggestions li:last-child {
@@ -440,20 +476,24 @@ body {
 }
 
 .item-info {
-    margin: 0.8rem 0;
+    margin: 0.6rem 0;
 }
 
 .item-info label {
     font-weight: 600;
     color: #2c3e50;
+    display: block;
+    margin-bottom: 0.2rem;
+    font-size: 0.8rem;
 }
 
 .item-info span {
     color: #666;
+    font-size: 0.85rem;
 }
 
 #modalItemsList {
-    max-height: 180px;
+    max-height: 150px;
     overflow-y: auto;
     padding: 0.4rem;
     border: 1px solid #e1e8ed;
@@ -473,56 +513,254 @@ body {
     align-items: center;
     padding: 0.4rem;
     border-bottom: 1px solid #e1e8ed;
+    font-size: 0.8rem;
 }
 
 #modalItemsList li:last-child {
     border-bottom: none;
 }
 
+.item-count-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: #dc3545;
+    color: white;
+    border-radius: 50%;
+    padding: 1px 4px;
+    font-size: 0.55rem;
+    line-height: 1;
+    min-width: 14px;
+    text-align: center;
+}
+
+/* Estilos específicos para dispositivos móviles */
 @media (max-width: 768px) {
-    .nav-controls {
+    .header {
+        padding: 0.5rem;
         flex-direction: column;
-        gap: 0.4rem;
+        gap: 0.5rem;
+        position: relative;
+        height: auto;
+    }
+
+    .logo h1 {
+        font-size: 1rem;
+    }
+
+    .nav-controls {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+    }
+
+    .search-container {
+        width: 100%;
+        order: 0;
+        margin-bottom: 0.5rem;
     }
 
     .search-input {
         width: 100%;
+        font-size: 0.85rem;
+        padding: 0.5rem 0.5rem 0.5rem 2rem;
     }
 
-    .add-item-form {
-        grid-template-columns: 1fr;
+    .nav-btn {
+        flex: 1;
+        min-width: auto;
+        padding: 0.4rem 0.3rem;
+        font-size: 0.7rem;
+        text-align: center;
     }
 
-    .config-section {
-        grid-template-columns: 1fr;
+    .container {
+        margin-top: 0;
+        padding: 0.5rem;
+        min-height: 100vh;
     }
 
-    .aisle-configs {
-        grid-template-columns: 1fr;
+    .section {
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .section h2 {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    #warehouseCanvas {
+        height: 300px;
     }
 
     .warehouse-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .casilla {
-        font-size: 0.6rem;
-        padding: 0.15rem;
+        gap: 0.4rem;
     }
 
     .casillas-grid {
-        grid-template-columns: repeat(6, 35px);
+        grid-template-columns: repeat(auto-fit, minmax(45px, 1fr));
+        gap: 0.2rem;
+    }
+
+    .casilla {
+        min-width: 45px;
+        min-height: 45px;
+        font-size: 0.55rem;
+        padding: 0.1rem;
+    }
+
+    .items-table {
+        font-size: 0.7rem;
+    }
+
+    .items-table th,
+    .items-table td {
+        padding: 0.3rem 0.2rem;
+    }
+
+    .items-table th {
+        font-size: 0.65rem;
+    }
+
+    .btn {
+        padding: 0.5rem 0.8rem;
+        font-size: 0.8rem;
+    }
+
+    .modal-content {
+        margin: 2% auto;
+        width: 98%;
+        padding: 0.75rem;
+    }
+
+    .config-input {
+        padding: 0.5rem;
+        font-size: 0.8rem;
+    }
+
+    .pagination {
+        gap: 0.3rem;
+    }
+
+    .pagination button {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.75rem;
+    }
+
+    /* Hacer las tablas más pequeñas y manejables en móvil */
+    .items-table thead th:nth-child(3),
+    .items-table tbody td:nth-child(3) {
+        display: none; /* Ocultar descripción en móvil */
+    }
+
+    .items-table thead th:nth-child(5),
+    .items-table tbody td:nth-child(5) {
+        display: none; /* Ocultar fecha en móvil */
+    }
+
+    /* Scroll horizontal para tablas cuando sea necesario */
+    .items-table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Mejorar el toque en elementos pequeños */
+    .casilla,
+    .btn,
+    .nav-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    /* Optimizar formularios */
+    .add-item-form,
+    .location-controls {
+        gap: 0.5rem;
+    }
+
+    .location-selector h4 {
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    /* Mejorar espaciado general */
+    .config-group {
+        margin-bottom: 0.4rem;
+    }
+
+    .aisle-configs {
+        gap: 0.5rem;
+    }
+
+    /* Notificaciones más grandes en móvil */
+    .notification {
+        font-size: 0.9rem;
+        padding: 0.8rem;
+        margin: 0 0.5rem;
     }
 }
 
-.item-count-badge {
-    position: absolute;
-    top: 1px;
-    right: 1px;
-    background: #dc3545;
-    color: white;
-    border-radius: 50%;
-    padding: 1px 3px;
-    font-size: 0.6rem;
-    line-height: 1;
+@media (max-width: 480px) {
+    .nav-btn {
+        font-size: 0.65rem;
+        padding: 0.3rem 0.2rem;
+    }
+
+    .casilla {
+        min-width: 40px;
+        min-height: 40px;
+        font-size: 0.5rem;
+    }
+
+    .casillas-grid {
+        grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
+    }
+
+    .items-table {
+        font-size: 0.65rem;
+    }
+
+    .btn {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.6rem;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 1% auto;
+    }
+
+    .section {
+        padding: 0.4rem;
+    }
+
+    #warehouseCanvas {
+        height: 250px;
+    }
+}
+
+/* Mejorar contraste en modo oscuro si es necesario */
+@media (prefers-color-scheme: dark) {
+    .notification {
+        background: #2d5a2d;
+        color: #b3d4b3;
+        border-color: #4a7c4a;
+    }
+}
+
+/* Animaciones suaves para transiciones */
+.casilla,
+.btn,
+.nav-btn {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Scroll suave para elementos con overflow */
+.modal-content,
+.suggestions,
+#modalItemsList {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
 }
