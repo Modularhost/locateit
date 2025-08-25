@@ -57,6 +57,10 @@ let layoutConfig = {
     aisles: []
 };
 let selectedAisle = null;
+let isDragging = false;
+let draggedAisle = null;
+let dragStartX = 0;
+let dragStartY = 0;
 
 document.addEventListener('DOMContentLoaded', async function() {
     await loadWarehouseConfig();
@@ -92,10 +96,11 @@ function setupEventListeners() {
     });
 
     const canvas = document.getElementById('warehouseCanvas');
+    canvas.addEventListener('mousedown', handleCanvasMouseDown);
+    canvas.addEventListener('mousemove', handleCanvasMouseMove);
+    canvas.addEventListener('mouseup', handleCanvasMouseUp);
     canvas.addEventListener('click', handleCanvasClick);
-    canvas.addEventListener('mousemove', handleCanvasHover);
 
-    // Nuevos manejadores de eventos
     const pasillosInput = document.getElementById('pasillosInput');
     if (pasillosInput) {
         pasillosInput.addEventListener('change', updateAisleConfigs);
@@ -202,6 +207,10 @@ function drawWarehouseLayout() {
         const width = aisle.orientation === 'vertical' ? aisle.width : aisle.height;
         const height = aisle.orientation === 'vertical' ? aisle.height : aisle.width;
 
+        if (isDragging && draggedAisle && draggedAisle.id === aisle.id) {
+            ctx.fillStyle = 'rgba(0, 123, 255, 0.3)';
+        }
+
         ctx.fillRect(aisle.x, aisle.y, width, height);
         ctx.strokeRect(aisle.x, aisle.y, width, height);
 
@@ -224,31 +233,48 @@ function drawWarehouseLayout() {
     });
 }
 
-function handleCanvasClick(event) {
+function getMousePosition(event) {
     const canvas = document.getElementById('warehouseCanvas');
     const rect = canvas.getBoundingClientRect();
     const x = (event.clientX - rect.left) * (canvas.width / rect.width) / window.devicePixelRatio;
     const y = (event.clientY - rect.top) * (canvas.height / rect.height) / window.devicePixelRatio;
+    return { x, y };
+}
 
-    const clickedAisle = layoutConfig.aisles.find(aisle => {
+function handleCanvasMouseDown(event) {
+    if (currentView !== 'croquis') return;
+
+    const { x, y } = getMousePosition(event);
+    draggedAisle = layoutConfig.aisles.find(aisle => {
         const width = aisle.orientation === 'vertical' ? aisle.width : aisle.height;
         const height = aisle.orientation === 'vertical' ? aisle.height : aisle.width;
         return x >= aisle.x && x <= aisle.x + width &&
                y >= aisle.y && y <= aisle.y + height;
     });
 
-    if (clickedAisle) {
-        selectedAisle = clickedAisle.id;
-        switchView({ target: { dataset: { view: 'mapa' } } });
-        generateWarehouse();
+    if (draggedAisle) {
+        isDragging = true;
+        dragStartX = x - draggedAisle.x;
+        dragStartY = y - draggedAisle.y;
+        document.getElementById('warehouseCanvas').style.cursor = 'move';
     }
 }
 
-function handleCanvasHover(event) {
+function handleCanvasMouseMove(event) {
     const canvas = document.getElementById('warehouseCanvas');
-    const rect = canvas.getBoundingClientRect();
-    const x = (event.clientX - rect.left) * (canvas.width / rect.width) / window.devicePixelRatio;
-    const y = (event.clientY - rect.top) * (canvas.height / rect.height) / window.devicePixelRatio;
+    const { x, y } = getMousePosition(event);
+
+    if (isDragging && draggedAisle) {
+        const width = draggedAisle.orientation === 'vertical' ? draggedAisle.width : draggedAisle.height;
+        const height = draggedAisle.orientation === 'vertical' ? draggedAisle.height : draggedAisle.width;
+
+        draggedAisle.x = Math.max(0, Math.min(x - dragStartX, canvas.width / window.devicePixelRatio - width));
+        draggedAisle.y = Math.max(0, Math.min(y - dragStartY, canvas.height / window.devicePixelRatio - height));
+
+        drawWarehouseLayout();
+        updateLayoutConfigs();
+        return;
+    }
 
     const hoveredAisle = layoutConfig.aisles.find(aisle => {
         const width = aisle.orientation === 'vertical' ? aisle.width : aisle.height;
@@ -257,7 +283,7 @@ function handleCanvasHover(event) {
                y >= aisle.y && y <= aisle.y + height;
     });
 
-    canvas.style.cursor = hoveredAisle ? 'pointer' : 'default';
+    canvas.style.cursor = hoveredAisle ? 'move' : 'default';
     drawWarehouseLayout();
     if (hoveredAisle) {
         const ctx = canvas.getContext('2d');
@@ -280,6 +306,36 @@ function handleCanvasHover(event) {
         } else {
             ctx.fillText(`Pasillo ${hoveredAisle.id} (${allItems.filter(item => item.location.startsWith(`${hoveredAisle.id}-`)).length})`, textX, textY);
         }
+    }
+}
+
+async function handleCanvasMouseUp() {
+    if (isDragging && draggedAisle) {
+        isDragging = false;
+        await saveLayoutConfig();
+        showNotification('Posición del pasillo guardada');
+        draggedAisle = null;
+        document.getElementById('warehouseCanvas').style.cursor = 'default';
+        drawWarehouseLayout();
+        updateLayoutConfigs();
+    }
+}
+
+function handleCanvasClick(event) {
+    if (isDragging) return;
+
+    const { x, y } = getMousePosition(event);
+    const clickedAisle = layoutConfig.aisles.find(aisle => {
+        const width = aisle.orientation === 'vertical' ? aisle.width : aisle.height;
+        const height = aisle.orientation === 'vertical' ? aisle.height : aisle.width;
+        return x >= aisle.x && x <= aisle.x + width &&
+               y >= aisle.y && y <= aisle.y + height;
+    });
+
+    if (clickedAisle) {
+        selectedAisle = clickedAisle.id;
+        switchView({ target: { dataset: { view: 'mapa' } } });
+        generateWarehouse();
     }
 }
 
