@@ -134,11 +134,9 @@ function setupEventListeners() {
 async function loadLayoutConfig() {
     try {
         const layoutDoc = await getDoc(doc(db, 'config', 'layout'));
-        console.log('Datos cargados desde Firebase:', layoutDoc.exists() ? layoutDoc.data() : 'No existe');
         if (layoutDoc.exists()) {
             layoutConfig = layoutDoc.data();
             if (!Array.isArray(layoutConfig.aisles)) {
-                console.warn('layoutConfig.aisles no es un array, inicializando con valores predeterminados');
                 layoutConfig.aisles = Array(warehouseConfig.pasillos).fill().map((_, index) => ({
                     id: index + 1,
                     x: 50 + index * 120,
@@ -149,14 +147,13 @@ async function loadLayoutConfig() {
                 }));
                 await saveLayoutConfig();
             } else {
-                layoutConfig.aisles = layoutConfig.aisles.map(aisle => ({
-                    ...aisle,
-                    orientation: ['vertical', 'horizontal'].includes(aisle.orientation) ? aisle.orientation : 'vertical'
-                }));
-                console.log('layoutConfig después de validar orientaciones:', layoutConfig);
+                layoutConfig.aisles.forEach(aisle => {
+                    if (!['vertical', 'horizontal'].includes(aisle.orientation)) {
+                        aisle.orientation = 'vertical';
+                    }
+                });
             }
         } else {
-            console.warn('No se encontró layoutConfig, inicializando con valores predeterminados');
             layoutConfig = {
                 aisles: Array(warehouseConfig.pasillos).fill().map((_, index) => ({
                     id: index + 1,
@@ -164,12 +161,11 @@ async function loadLayoutConfig() {
                     y: 50,
                     width: 50,
                     height: 200,
-                    orientation: 'vertical'
+                    orientation: index % 2 === 0 ? 'vertical' : 'horizontal'
                 }))
             };
             await saveLayoutConfig();
         }
-        console.log('layoutConfig final después de cargar:', layoutConfig);
     } catch (error) {
         console.error('Error al cargar configuración de disposición:', error);
         layoutConfig = {
@@ -179,7 +175,7 @@ async function loadLayoutConfig() {
                 y: 50,
                 width: 50,
                 height: 200,
-                orientation: 'vertical'
+                orientation: index % 2 === 0 ? 'vertical' : 'horizontal'
             }))
         };
         await saveLayoutConfig();
@@ -188,20 +184,7 @@ async function loadLayoutConfig() {
 
 async function saveLayoutConfig() {
     try {
-        console.log('Guardando layoutConfig:', JSON.stringify(layoutConfig, null, 2));
-        await setDoc(doc(db, 'config', 'layout'), {
-            aisles: layoutConfig.aisles.map(aisle => ({
-                id: aisle.id,
-                x: parseInt(aisle.x) || 50,
-                y: parseInt(aisle.y) || 50,
-                width: parseInt(aisle.width) || 50,
-                height: parseInt(aisle.height) || 200,
-                orientation: aisle.orientation || 'vertical'
-            }))
-        });
-        console.log('layoutConfig guardado correctamente');
-        // Forzar recarga para asegurar sincronización
-        await loadLayoutConfig();
+        await setDoc(doc(db, 'config', 'layout'), layoutConfig);
     } catch (error) {
         console.error('Error al guardar configuración de disposición:', error);
     }
@@ -221,14 +204,13 @@ function drawWarehouseLayout() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     layoutConfig.aisles.forEach(aisle => {
-        console.log(`Dibujando pasillo ${aisle.id} con orientación: ${aisle.orientation}, x: ${aisle.x}, y: ${aisle.y}, width: ${aisle.width}, height: ${aisle.height}`);
         const itemCount = allItems.filter(item => item.location.startsWith(`${aisle.id}-`)).length;
         ctx.fillStyle = itemCount > 0 ? '#e3f2fd' : '#ffffff';
         ctx.strokeStyle = '#2c3e50';
         ctx.lineWidth = 2;
 
-        const width = aisle.orientation === 'horizontal' ? aisle.height : aisle.width;
-        const height = aisle.orientation === 'horizontal' ? aisle.width : aisle.height;
+        const width = aisle.orientation === 'vertical' ? aisle.width : aisle.height;
+        const height = aisle.orientation === 'vertical' ? aisle.height : aisle.width;
 
         if (isDragging && draggedAisle && draggedAisle.id === aisle.id) {
             ctx.fillStyle = 'rgba(0, 123, 255, 0.3)';
@@ -244,14 +226,14 @@ function drawWarehouseLayout() {
         const textX = aisle.x + width / 2;
         const textY = aisle.y + height / 2;
 
-        if (aisle.orientation === 'horizontal') {
+        if (aisle.orientation === 'vertical') {
+            ctx.fillText(`Pasillo ${aisle.id} (${itemCount})`, textX, textY);
+        } else {
             ctx.save();
             ctx.translate(textX, textY);
             ctx.rotate(-Math.PI / 2);
             ctx.fillText(`Pasillo ${aisle.id} (${itemCount})`, 0, 0);
             ctx.restore();
-        } else {
-            ctx.fillText(`Pasillo ${aisle.id} (${itemCount})`, textX, textY);
         }
     });
 }
@@ -269,8 +251,8 @@ function handleCanvasMouseDown(event) {
 
     const { x, y } = getMousePosition(event);
     draggedAisle = layoutConfig.aisles.find(aisle => {
-        const width = aisle.orientation === 'horizontal' ? aisle.height : aisle.width;
-        const height = aisle.orientation === 'horizontal' ? aisle.width : aisle.height;
+        const width = aisle.orientation === 'vertical' ? aisle.width : aisle.height;
+        const height = aisle.orientation === 'vertical' ? aisle.height : aisle.width;
         return x >= aisle.x && x <= aisle.x + width &&
                y >= aisle.y && y <= aisle.y + height;
     });
@@ -288,8 +270,8 @@ function handleCanvasMouseMove(event) {
     const { x, y } = getMousePosition(event);
 
     if (isDragging && draggedAisle) {
-        const width = draggedAisle.orientation === 'horizontal' ? draggedAisle.height : draggedAisle.width;
-        const height = draggedAisle.orientation === 'horizontal' ? draggedAisle.width : draggedAisle.height;
+        const width = draggedAisle.orientation === 'vertical' ? draggedAisle.width : draggedAisle.height;
+        const height = draggedAisle.orientation === 'vertical' ? draggedAisle.height : draggedAisle.width;
 
         draggedAisle.x = Math.max(0, Math.min(x - dragStartX, canvas.width / window.devicePixelRatio - width));
         draggedAisle.y = Math.max(0, Math.min(y - dragStartY, canvas.height / window.devicePixelRatio - height));
@@ -300,8 +282,8 @@ function handleCanvasMouseMove(event) {
     }
 
     const hoveredAisle = layoutConfig.aisles.find(aisle => {
-        const width = aisle.orientation === 'horizontal' ? aisle.height : aisle.width;
-        const height = aisle.orientation === 'horizontal' ? aisle.width : aisle.height;
+        const width = aisle.orientation === 'vertical' ? aisle.width : aisle.height;
+        const height = aisle.orientation === 'vertical' ? aisle.height : aisle.width;
         return x >= aisle.x && x <= aisle.x + width &&
                y >= aisle.y && y <= aisle.y + height;
     });
@@ -310,8 +292,8 @@ function handleCanvasMouseMove(event) {
     drawWarehouseLayout();
     if (hoveredAisle) {
         const ctx = canvas.getContext('2d');
-        const width = hoveredAisle.orientation === 'horizontal' ? hoveredAisle.height : hoveredAisle.width;
-        const height = hoveredAisle.orientation === 'horizontal' ? hoveredAisle.width : hoveredAisle.height;
+        const width = hoveredAisle.orientation === 'vertical' ? hoveredAisle.width : hoveredAisle.height;
+        const height = hoveredAisle.orientation === 'vertical' ? hoveredAisle.height : hoveredAisle.width;
         ctx.fillStyle = 'rgba(0, 123, 255, 0.2)';
         ctx.fillRect(hoveredAisle.x, hoveredAisle.y, width, height);
         ctx.fillStyle = '#2c3e50';
@@ -320,14 +302,14 @@ function handleCanvasMouseMove(event) {
         ctx.textBaseline = 'middle';
         const textX = hoveredAisle.x + width / 2;
         const textY = hoveredAisle.y + height / 2;
-        if (hoveredAisle.orientation === 'horizontal') {
+        if (hoveredAisle.orientation === 'vertical') {
+            ctx.fillText(`Pasillo ${hoveredAisle.id} (${allItems.filter(item => item.location.startsWith(`${hoveredAisle.id}-`)).length})`, textX, textY);
+        } else {
             ctx.save();
             ctx.translate(textX, textY);
             ctx.rotate(-Math.PI / 2);
             ctx.fillText(`Pasillo ${hoveredAisle.id} (${allItems.filter(item => item.location.startsWith(`${hoveredAisle.id}-`)).length})`, 0, 0);
             ctx.restore();
-        } else {
-            ctx.fillText(`Pasillo ${hoveredAisle.id} (${allItems.filter(item => item.location.startsWith(`${hoveredAisle.id}-`)).length})`, textX, textY);
         }
     }
 }
@@ -335,7 +317,6 @@ function handleCanvasMouseMove(event) {
 async function handleCanvasMouseUp() {
     if (isDragging && draggedAisle) {
         isDragging = false;
-        console.log('Pasillo soltado:', draggedAisle);
         await saveLayoutConfig();
         showNotification('Posición del pasillo guardada');
         draggedAisle = null;
@@ -350,8 +331,8 @@ function handleCanvasClick(event) {
 
     const { x, y } = getMousePosition(event);
     const clickedAisle = layoutConfig.aisles.find(aisle => {
-        const width = aisle.orientation === 'horizontal' ? aisle.height : aisle.width;
-        const height = aisle.orientation === 'horizontal' ? aisle.width : aisle.height;
+        const width = aisle.orientation === 'vertical' ? aisle.width : aisle.height;
+        const height = aisle.orientation === 'vertical' ? aisle.height : aisle.width;
         return x >= aisle.x && x <= aisle.x + width &&
                y >= aisle.y && y <= aisle.y + height;
     });
@@ -494,6 +475,11 @@ function updateLayoutConfigs() {
         orientationSelect.addEventListener('change', () => {
             console.log(`Cambiando orientación del pasillo ${p} a: ${orientationSelect.value}`);
             layoutConfig.aisles[p-1].orientation = orientationSelect.value;
+            const temp = layoutConfig.aisles[p-1].width;
+            layoutConfig.aisles[p-1].width = layoutConfig.aisles[p-1].height;
+            layoutConfig.aisles[p-1].height = temp;
+            widthInput.value = layoutConfig.aisles[p-1].width;
+            heightInput.value = layoutConfig.aisles[p-1].height;
             drawWarehouseLayout();
             saveLayoutConfig();
         });
@@ -503,8 +489,6 @@ function updateLayoutConfigs() {
 
         layoutConfigsDiv.appendChild(layoutDiv);
     }
-    console.log('layoutConfig después de actualizar configs:', JSON.stringify(layoutConfig, null, 2));
-    drawWarehouseLayout();
 }
 
 function switchView(e) {
