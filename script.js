@@ -17,9 +17,7 @@ const db = getFirestore(app);
 if (location.hostname === 'localhost') {
     try {
         connectFirestoreEmulator(db, 'localhost', 8080);
-    } catch (error) {
-        console.log('Emulador no disponible, usando Firebase en producción');
-    }
+    } catch (error) {}
 }
 
 window.db = db;
@@ -30,8 +28,6 @@ window.deleteDoc = deleteDoc;
 window.collection = collection;
 window.doc = doc;
 window.onSnapshot = onSnapshot;
-
-console.log('Firebase inicializado correctamente');
 
 let currentView = 'croquis';
 let currentPage = 1;
@@ -169,7 +165,6 @@ async function loadLayoutConfig() {
             await saveLayoutConfig();
         }
     } catch (error) {
-        console.error('Error al cargar configuración de disposición:', error);
         layoutConfig = {
             aisles: Array(warehouseConfig.pasillos).fill().map((_, index) => ({
                 id: index + 1,
@@ -187,9 +182,7 @@ async function loadLayoutConfig() {
 async function saveLayoutConfig() {
     try {
         await setDoc(doc(db, 'config', 'layout'), layoutConfig);
-    } catch (error) {
-        console.error('Error al guardar configuración de disposición:', error);
-    }
+    } catch (error) {}
 }
 
 function drawWarehouseLayout() {
@@ -493,7 +486,6 @@ function updateLayoutConfigs() {
             <option value="horizontal" ${layoutConfig.aisles[p-1].orientation === 'horizontal' ? 'selected' : ''}>Horizontal</option>
         `;
         orientationSelect.addEventListener('change', () => {
-            console.log(`Cambiando orientación del pasillo ${p} a: ${orientationSelect.value}`);
             layoutConfig.aisles[p-1].orientation = orientationSelect.value;
             const temp = layoutConfig.aisles[p-1].width;
             layoutConfig.aisles[p-1].width = layoutConfig.aisles[p-1].height;
@@ -538,8 +530,6 @@ function switchView(e) {
 function generateWarehouse() {
     const grid = document.getElementById('warehouseGrid');
     grid.innerHTML = '';
-
-    console.log('Generando almacén con configuración:', warehouseConfig);
 
     const pasillosToShow = selectedAisle ? [selectedAisle] : Array.from({ length: warehouseConfig.pasillos }, (_, i) => i + 1);
 
@@ -603,6 +593,12 @@ function generateWarehouse() {
         pasilloDiv.appendChild(estantesDiv);
         grid.appendChild(pasilloDiv);
     }
+}
+
+function showFullMap() {
+    selectedAisle = null;
+    switchView({ target: { dataset: { view: 'mapa' } } });
+    generateWarehouse();
 }
 
 function updateAisleConfigs() {
@@ -693,7 +689,6 @@ async function applyChanges() {
         updateLocationSelectors();
         showNotification('Configuración aplicada correctamente');
     } catch (error) {
-        console.error('Error al aplicar cambios:', error);
         showNotification('Error al aplicar los cambios', 'error');
     }
 }
@@ -717,7 +712,6 @@ async function loadWarehouseConfig() {
         if (configDoc.exists()) {
             warehouseConfig = configDoc.data();
             if (!Array.isArray(warehouseConfig.aisleConfigs)) {
-                console.warn('aisleConfigs is not an array, initializing with defaults');
                 warehouseConfig.aisleConfigs = Array(warehouseConfig.pasillos || 4).fill().map(() => ({ estantes: 4, casillas: 6 }));
                 await saveWarehouseConfig();
             }
@@ -730,7 +724,6 @@ async function loadWarehouseConfig() {
         }
         document.getElementById('pasillosInput').value = warehouseConfig.pasillos;
     } catch (error) {
-        console.error('Error al cargar configuración:', error);
         warehouseConfig = {
             pasillos: 4,
             aisleConfigs: Array(4).fill().map(() => ({ estantes: 4, casillas: 6 }))
@@ -749,9 +742,7 @@ async function saveWarehouseConfig() {
                 casillas: parseInt(config.casillas) || 6
             }))
         });
-    } catch (error) {
-        console.error('Error al guardar configuración:', error);
-    }
+    } catch (error) {}
 }
 
 async function loadItems() {
@@ -774,9 +765,7 @@ async function loadItems() {
         });
         filteredItems = [...allItems];
         document.getElementById('itemsCount').textContent = allItems.length;
-    } catch (error) {
-        console.error('Error al cargar ítems:', error);
-    }
+    } catch (error) {}
 }
 
 async function addItem() {
@@ -827,7 +816,6 @@ async function addItem() {
         document.getElementById('itemDescription').value = '';
         showNotification('Item añadido correctamente.');
     } catch (error) {
-        console.error('Error al añadir item:', error);
         showNotification('Error al añadir item.', 'error');
     }
 }
@@ -876,7 +864,6 @@ async function saveItemToModal() {
         openCasillModal(currentCasilla);
         showNotification('Ítem añadido a la casilla correctamente.');
     } catch (error) {
-        console.error('Error al guardar ítem en casilla:', error);
         showNotification('Error al guardar ítem.', 'error');
     }
 }
@@ -898,7 +885,6 @@ async function removeItem(itemId) {
             if (currentCasilla) openCasillModal(currentCasilla);
             showNotification('Ítem eliminado correctamente');
         } catch (error) {
-            console.error('Error al eliminar ítem:', error);
             showNotification('Error al eliminar el ítem', 'error');
         }
     }
@@ -920,7 +906,6 @@ async function clearAllItems() {
             updateLocationSelectors();
             showNotification('Todos los ítems eliminados');
         } catch (error) {
-            console.error('Error al eliminar todos los ítems:', error);
             showNotification('Error al eliminar los ítems', 'error');
         }
     }
@@ -1031,7 +1016,6 @@ async function bulkDelete() {
             updateLocationSelectors();
             showNotification('Ítems eliminados correctamente');
         } catch (error) {
-            console.error('Error al eliminar ítems:', error);
             showNotification('Error al eliminar los ítems', 'error');
         }
     }
@@ -1170,9 +1154,7 @@ async function loadCatalog() {
         });
         filteredCatalog = [...allCatalog];
         document.getElementById('catalogoCount').textContent = allCatalog.length;
-    } catch (error) {
-        console.error('Error al cargar catálogo:', error);
-    }
+    } catch (error) {}
 }
 
 async function addToCatalog() {
@@ -1200,7 +1182,6 @@ async function addToCatalog() {
         document.getElementById('catalogDescription').value = '';
         showNotification('Producto añadido al catálogo correctamente.');
     } catch (error) {
-        console.error('Error al añadir al catálogo:', error);
         showNotification('Error al añadir al catálogo.', 'error');
     }
 }
@@ -1243,7 +1224,6 @@ async function removeFromCatalog(itemId) {
             updateCatalogTable();
             showNotification('Producto eliminado del catálogo.');
         } catch (error) {
-            console.error('Error al eliminar del catálogo:', error);
             showNotification('Error al eliminar del catálogo.', 'error');
         }
     }
@@ -1262,7 +1242,6 @@ async function clearCatalog() {
             updateCatalogTable();
             showNotification('Catálogo limpiado correctamente.');
         } catch (error) {
-            console.error('Error al limpiar catálogo:', error);
             showNotification('Error al limpiar el catálogo.', 'error');
         }
     }
@@ -1393,17 +1372,10 @@ function openItemModal(item) {
     document.getElementById('itemCodeView').textContent = item.code;
     document.getElementById('itemDescriptionView').textContent = item.description || '';
 
-    // Desglosar la ubicación (formato: pasillo-estante-casilla, ej. "1-A-2")
     const [pasillo, estante, casilla] = item.location.split('-');
-    const locationDetails = `
-        <strong>Ubicación:</strong>
-        <ul>
-            <li>Pasillo: ${pasillo}</li>
-            <li>Estante: ${estante}</li>
-            <li>Casilla: ${casilla}</li>
-        </ul>
-    `;
-    document.getElementById('itemLocationView').innerHTML = locationDetails;
+    document.getElementById('itemLocationPasillo').textContent = pasillo;
+    document.getElementById('itemLocationEstante').textContent = estante;
+    document.getElementById('itemLocationCasilla').textContent = casilla;
 
     modal.style.display = 'block';
 }
@@ -1493,7 +1465,6 @@ async function importData(event) {
         updateLocationSelectors();
         showNotification('Datos importados correctamente');
     } catch (error) {
-        console.error('Error al importar datos:', error);
         showNotification('Error al importar datos.', 'error');
     }
 }
@@ -1541,7 +1512,6 @@ async function importCatalogCSV(event) {
         updateCatalogTable();
         showNotification('Catálogo importado correctamente');
     } catch (error) {
-        console.error('Error al importar catálogo:', error);
         showNotification('Error al importar el catálogo.', 'error');
     }
 }
@@ -1616,7 +1586,6 @@ function sortCatalog(field) {
     updateCatalogTable();
 }
 
-// Exponer funciones al ámbito global
 window.applyChanges = applyChanges;
 window.updateAisleConfigs = updateAisleConfigs;
 window.updateEstanteSelect = updateEstanteSelect;
@@ -1646,3 +1615,4 @@ window.previousCatalogPage = previousCatalogPage;
 window.nextCatalogPage = nextCatalogPage;
 window.sortItems = sortItems;
 window.sortCatalog = sortCatalog;
+window.showFullMap = showFullMap;

@@ -15,7 +15,7 @@
         <div class="nav-controls">
             <div class="search-container">
                 <span class="search-icon">🔍</span>
-                <input type="text" class="search-input" placeholder="Buscar por nombre, etiqueta o ubicación..." id="searchInput" autocomplete="off">
+                <input type="text" class="search-input" placeholder="Buscar por nombre, etiqueta o ubicación..." id="searchInput">
                 <div id="searchSuggestions" class="suggestions hidden"></div>
             </div>
             <button class="nav-btn active" data-view="croquis">Croquis</button>
@@ -38,6 +38,9 @@
 
         <div id="mapa-view" class="section hidden">
             <h2>Mapa visual</h2>
+            <div style="margin-bottom: 1rem;">
+                <button class="btn btn-secondary" onclick="showFullMap()">Restaurar</button>
+            </div>
             <div id="warehouseGrid" class="warehouse-grid">
             </div>
             <p style="color: #666; margin-top: 1rem;">Haz clic en una casilla para ver o agregar contenido.</p>
