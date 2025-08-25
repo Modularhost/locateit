@@ -1493,25 +1493,58 @@ async function importCatalogCSV(event) {
     if (!file) return;
 
     try {
-        const text = await file.text();
-        const lines = text.split('\n').map(line => line.trim()).filter(line => line);
-        const writePromises = [];
-        
-        for (let i = 1; i < lines.length; i++) {
-            const [code, description] = lines[i].split(',').map(item => item.trim());
-            if (code && description && !allCatalog.some(item => item.code.toLowerCase() === code.toLowerCase())) {
-                writePromises.push(setDoc(doc(db, 'catalog', code), {
-                    code,
-                    description
-                }));
+        if (file.name.endsWith('.csv')) {
+            const text = await file.text();
+            const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+            const writePromises = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                const [code, description] = lines[i].split(',').map(item => item.trim());
+                if (code && description && !allCatalog.some(item => item.code.toLowerCase() === code.toLowerCase())) {
+                    writePromises.push(setDoc(doc(db, 'catalog', code), {
+                        code,
+                        description
+                    }));
+                }
             }
+            
+            await Promise.all(writePromises);
+        } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const sheet = workbook.Sheets[sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+                const writePromises = [];
+                for (let i = 1; i < jsonData.length; i++) {
+                    const [code, description] = jsonData[i];
+                    if (code && description && !allCatalog.some(item => item.code.toLowerCase() === code.toLowerCase())) {
+                        writePromises.push(setDoc(doc(db, 'catalog', code), {
+                            code: String(code),
+                            description: String(description)
+                        }));
+                    }
+                }
+                await Promise.all(writePromises);
+                await loadCatalog();
+                updateCatalogTable();
+                showNotification('Catálogo importado correctamente');
+            };
+            reader.readAsArrayBuffer(file);
+            return; 
+        } else {
+            showNotification('Formato de archivo no soportado. Usa .csv, .xlsx o .xls.', 'error');
+            return;
         }
-        
-        await Promise.all(writePromises);
+
         await loadCatalog();
         updateCatalogTable();
         showNotification('Catálogo importado correctamente');
     } catch (error) {
+        console.error('Error al importar:', error);
         showNotification('Error al importar el catálogo.', 'error');
     }
 }
