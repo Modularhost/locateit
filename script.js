@@ -103,7 +103,7 @@ async function loadLayoutConfig() {
             if (!Array.isArray(layoutConfig.aisles)) {
                 layoutConfig.aisles = Array(warehouseConfig.pasillos).fill().map((_, index) => ({
                     id: index + 1,
-                    x: 50 + index * 100,
+                    x: 50 + index * 120,
                     y: 50,
                     width: 50,
                     height: 200,
@@ -115,11 +115,11 @@ async function loadLayoutConfig() {
             layoutConfig = {
                 aisles: Array(warehouseConfig.pasillos).fill().map((_, index) => ({
                     id: index + 1,
-                    x: 50 + index * 100,
+                    x: 50 + index * 120,
                     y: 50,
                     width: 50,
                     height: 200,
-                    orientation: 'vertical'
+                    orientation: index % 2 === 0 ? 'vertical' : 'horizontal'
                 }))
             };
             await saveLayoutConfig();
@@ -129,11 +129,11 @@ async function loadLayoutConfig() {
         layoutConfig = {
             aisles: Array(warehouseConfig.pasillos).fill().map((_, index) => ({
                 id: index + 1,
-                x: 50 + index * 100,
+                x: 50 + index * 120,
                 y: 50,
                 width: 50,
                 height: 200,
-                orientation: 'vertical'
+                orientation: index % 2 === 0 ? 'vertical' : 'horizontal'
             }))
         };
         await saveLayoutConfig();
@@ -154,7 +154,7 @@ function drawWarehouseLayout() {
 
     // Ajustar el tamaño del canvas al contenedor
     canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-    canvas.height = 400 * window.devicePixelRatio;
+    canvas.height = 600 * window.devicePixelRatio; // Aumentamos la altura para más espacio
     ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
     // Limpiar el canvas
@@ -171,18 +171,32 @@ function drawWarehouseLayout() {
         ctx.strokeStyle = '#2c3e50';
         ctx.lineWidth = 2;
 
+        // Ajustar dimensiones según orientación
+        const width = aisle.orientation === 'vertical' ? aisle.width : aisle.height;
+        const height = aisle.orientation === 'vertical' ? aisle.height : aisle.width;
+
         // Dibujar rectángulo del pasillo
-        ctx.fillRect(aisle.x, aisle.y, aisle.width, aisle.height);
-        ctx.strokeRect(aisle.x, aisle.y, aisle.width, aisle.height);
+        ctx.fillRect(aisle.x, aisle.y, width, height);
+        ctx.strokeRect(aisle.x, aisle.y, width, height);
 
         // Texto del pasillo
         ctx.fillStyle = '#2c3e50';
         ctx.font = '14px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        const textX = aisle.x + aisle.width / 2;
-        const textY = aisle.y + aisle.height / 2;
-        ctx.fillText(`Pasillo ${aisle.id} (${itemCount})`, textX, textY);
+        const textX = aisle.x + width / 2;
+        const textY = aisle.y + height / 2;
+
+        // Rotar texto si es horizontal
+        if (aisle.orientation === 'horizontal') {
+            ctx.save();
+            ctx.translate(textX, textY);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText(`Pasillo ${aisle.id} (${itemCount})`, 0, 0);
+            ctx.restore();
+        } else {
+            ctx.fillText(`Pasillo ${aisle.id} (${itemCount})`, textX, textY);
+        }
     });
 }
 
@@ -192,10 +206,12 @@ function handleCanvasClick(event) {
     const x = (event.clientX - rect.left) * (canvas.width / rect.width) / window.devicePixelRatio;
     const y = (event.clientY - rect.top) * (canvas.height / rect.height) / window.devicePixelRatio;
 
-    const clickedAisle = layoutConfig.aisles.find(aisle => 
-        x >= aisle.x && x <= aisle.x + aisle.width &&
-        y >= aisle.y && y <= aisle.y + aisle.height
-    );
+    const clickedAisle = layoutConfig.aisles.find(aisle => {
+        const width = aisle.orientation === 'vertical' ? aisle.width : aisle.height;
+        const height = aisle.orientation === 'vertical' ? aisle.height : aisle.width;
+        return x >= aisle.x && x <= aisle.x + width &&
+               y >= aisle.y && y <= aisle.y + height;
+    });
 
     if (clickedAisle) {
         selectedAisle = clickedAisle.id;
@@ -210,27 +226,178 @@ function handleCanvasHover(event) {
     const x = (event.clientX - rect.left) * (canvas.width / rect.width) / window.devicePixelRatio;
     const y = (event.clientY - rect.top) * (canvas.height / rect.height) / window.devicePixelRatio;
 
-    const hoveredAisle = layoutConfig.aisles.find(aisle => 
-        x >= aisle.x && x <= aisle.x + aisle.width &&
-        y >= aisle.y && y <= aisle.y + aisle.height
-    );
+    const hoveredAisle = layoutConfig.aisles.find(aisle => {
+        const width = aisle.orientation === 'vertical' ? aisle.width : aisle.height;
+        const height = aisle.orientation === 'vertical' ? aisle.height : aisle.width;
+        return x >= aisle.x && x <= aisle.x + width &&
+               y >= aisle.y && y <= aisle.y + height;
+    });
 
     canvas.style.cursor = hoveredAisle ? 'pointer' : 'default';
     drawWarehouseLayout();
     if (hoveredAisle) {
         const ctx = canvas.getContext('2d');
+        const width = hoveredAisle.orientation === 'vertical' ? hoveredAisle.width : hoveredAisle.height;
+        const height = hoveredAisle.orientation === 'vertical' ? hoveredAisle.height : hoveredAisle.width;
         ctx.fillStyle = 'rgba(0, 123, 255, 0.2)';
-        ctx.fillRect(hoveredAisle.x, hoveredAisle.y, hoveredAisle.width, hoveredAisle.height);
+        ctx.fillRect(hoveredAisle.x, hoveredAisle.y, width, height);
         ctx.fillStyle = '#2c3e50';
         ctx.font = '14px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        const textX = hoveredAisle.x + hoveredAisle.width / 2;
-        const textY = hoveredAisle.y + hoveredAisle.height / 2;
-        ctx.fillText(`Pasillo ${hoveredAisle.id} (${allItems.filter(item => item.location.startsWith(`${hoveredAisle.id}-`)).length})`, textX, textY);
+        const textX = hoveredAisle.x + width / 2;
+        const textY = hoveredAisle.y + height / 2;
+        if (hoveredAisle.orientation === 'horizontal') {
+            ctx.save();
+            ctx.translate(textX, textY);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText(`Pasillo ${hoveredAisle.id} (${allItems.filter(item => item.location.startsWith(`${hoveredAisle.id}-`)).length})`, 0, 0);
+            ctx.restore();
+        } else {
+            ctx.fillText(`Pasillo ${hoveredAisle.id} (${allItems.filter(item => item.location.startsWith(`${hoveredAisle.id}-`)).length})`, textX, textY);
+        }
     }
 }
 
+function updateLayoutConfigs() {
+    const pasillos = parseInt(document.getElementById('pasillosInput').value) || 4;
+    const layoutConfigsDiv = document.getElementById('layoutConfigs');
+    layoutConfigsDiv.innerHTML = '';
+
+    if (!Array.isArray(layoutConfig.aisles)) {
+        layoutConfig.aisles = Array(pasillos).fill().map((_, index) => ({
+            id: index + 1,
+            x: 50 + index * 120,
+            y: 50,
+            width: 50,
+            height: 200,
+            orientation: index % 2 === 0 ? 'vertical' : 'horizontal'
+        }));
+    } else if (layoutConfig.aisles.length > pasillos) {
+        layoutConfig.aisles = layoutConfig.aisles.slice(0, pasillos);
+    } else {
+        while (layoutConfig.aisles.length < pasillos) {
+            layoutConfig.aisles.push({
+                id: layoutConfig.aisles.length + 1,
+                x: 50 + layoutConfig.aisles.length * 120,
+                y: 50,
+                width: 50,
+                height: 200,
+                orientation: layoutConfig.aisles.length % 2 === 0 ? 'vertical' : 'horizontal'
+            });
+        }
+    }
+
+    for (let p = 1; p <= pasillos; p++) {
+        const layoutDiv = document.createElement('div');
+        layoutDiv.className = 'aisle-config';
+        
+        const header = document.createElement('h3');
+        header.textContent = `Disposición Pasillo ${p}`;
+        layoutDiv.appendChild(header);
+
+        const xGroup = document.createElement('div');
+        xGroup.className = 'config-group';
+        const xLabel = document.createElement('label');
+        xLabel.className = 'config-label';
+        xLabel.textContent = 'Posición X';
+        const xInput = document.createElement('input');
+        xInput.type = 'number';
+        xInput.className = 'config-input';
+        xInput.value = layoutConfig.aisles[p-1].x || 50;
+        xInput.min = 0;
+        xInput.max = 1000; // Límite para evitar desbordes
+        xInput.onchange = () => {
+            layoutConfig.aisles[p-1].x = parseInt(xInput.value) || 50;
+        };
+        xGroup.appendChild(xLabel);
+        xGroup.appendChild(xInput);
+        layoutDiv.appendChild(xGroup);
+
+        const yGroup = document.createElement('div');
+        yGroup.className = 'config-group';
+        const yLabel = document.createElement('label');
+        yLabel.className = 'config-label';
+        yLabel.textContent = 'Posición Y';
+        const yInput = document.createElement('input');
+        yInput.type = 'number';
+        yInput.className = 'config-input';
+        yInput.value = layoutConfig.aisles[p-1].y || 50;
+        yInput.min = 0;
+        yInput.max = 600; // Límite según altura del canvas
+        yInput.onchange = () => {
+            layoutConfig.aisles[p-1].y = parseInt(yInput.value) || 50;
+        };
+        yGroup.appendChild(yLabel);
+        yGroup.appendChild(yInput);
+        layoutDiv.appendChild(yGroup);
+
+        const widthGroup = document.createElement('div');
+        widthGroup.className = 'config-group';
+        const widthLabel = document.createElement('label');
+        widthLabel.className = 'config-label';
+        widthLabel.textContent = 'Ancho';
+        const widthInput = document.createElement('input');
+        widthInput.type = 'number';
+        widthInput.className = 'config-input';
+        widthInput.value = layoutConfig.aisles[p-1].width || 50;
+        widthInput.min = 20;
+        widthInput.max = 300;
+        widthInput.onchange = () => {
+            layoutConfig.aisles[p-1].width = parseInt(widthInput.value) || 50;
+        };
+        widthGroup.appendChild(widthLabel);
+        widthGroup.appendChild(widthInput);
+        layoutDiv.appendChild(widthGroup);
+
+        const heightGroup = document.createElement('div');
+        heightGroup.className = 'config-group';
+        const heightLabel = document.createElement('label');
+        heightLabel.className = 'config-label';
+        heightLabel.textContent = 'Alto';
+        const heightInput = document.createElement('input');
+        heightInput.type = 'number';
+        heightInput.className = 'config-input';
+        heightInput.value = layoutConfig.aisles[p-1].height || 200;
+        heightInput.min = 20;
+        heightInput.max = 300;
+        heightInput.onchange = () => {
+            layoutConfig.aisles[p-1].height = parseInt(heightInput.value) || 200;
+        };
+        heightGroup.appendChild(heightLabel);
+        heightGroup.appendChild(heightInput);
+        layoutDiv.appendChild(heightGroup);
+
+        const orientationGroup = document.createElement('div');
+        orientationGroup.className = 'config-group';
+        const orientationLabel = document.createElement('label');
+        orientationLabel.className = 'config-label';
+        orientationLabel.textContent = 'Orientación';
+        const orientationSelect = document.createElement('select');
+        orientationSelect.className = 'config-input';
+        orientationSelect.innerHTML = `
+            <option value="vertical" ${layoutConfig.aisles[p-1].orientation === 'vertical' ? 'selected' : ''}>Vertical</option>
+            <option value="horizontal" ${layoutConfig.aisles[p-1].orientation === 'horizontal' ? 'selected' : ''}>Horizontal</option>
+        `;
+        orientationSelect.onchange = () => {
+            layoutConfig.aisles[p-1].orientation = orientationSelect.value;
+            // Intercambiar ancho y alto al cambiar orientación
+            const temp = layoutConfig.aisles[p-1].width;
+            layoutConfig.aisles[p-1].width = layoutConfig.aisles[p-1].height;
+            layoutConfig.aisles[p-1].height = temp;
+            widthInput.value = layoutConfig.aisles[p-1].width;
+            heightInput.value = layoutConfig.aisles[p-1].height;
+            drawWarehouseLayout();
+        };
+        orientationGroup.appendChild(orientationLabel);
+        orientationGroup.appendChild(orientationSelect);
+        layoutDiv.appendChild(orientationGroup);
+
+        layoutConfigsDiv.appendChild(layoutDiv);
+    }
+}
+
+// Resto del código permanece igual
 function switchView(e) {
     const view = e.target.dataset.view;
     currentView = view;
@@ -341,11 +508,11 @@ function updateAisleConfigs() {
             warehouseConfig.aisleConfigs.push({ estantes: 4, casillas: 6 });
             layoutConfig.aisles.push({
                 id: warehouseConfig.aisleConfigs.length,
-                x: 50 + (warehouseConfig.aisleConfigs.length - 1) * 100,
+                x: 50 + (warehouseConfig.aisleConfigs.length - 1) * 120,
                 y: 50,
                 width: 50,
                 height: 200,
-                orientation: 'vertical'
+                orientation: warehouseConfig.aisleConfigs.length % 2 === 0 ? 'vertical' : 'horizontal'
             });
         }
     }
@@ -395,101 +562,6 @@ function updateAisleConfigs() {
         configDiv.appendChild(casillasGroup);
 
         configsDiv.appendChild(configDiv);
-    }
-}
-
-function updateLayoutConfigs() {
-    const pasillos = parseInt(document.getElementById('pasillosInput').value) || 4;
-    const layoutConfigsDiv = document.getElementById('layoutConfigs');
-    layoutConfigsDiv.innerHTML = '';
-
-    if (!Array.isArray(layoutConfig.aisles)) {
-        layoutConfig.aisles = Array(pasillos).fill().map((_, index) => ({
-            id: index + 1,
-            x: 50 + index * 100,
-            y: 50,
-            width: 50,
-            height: 200,
-            orientation: 'vertical'
-        }));
-    } else if (layoutConfig.aisles.length > pasillos) {
-        layoutConfig.aisles = layoutConfig.aisles.slice(0, pasillos);
-    } else {
-        while (layoutConfig.aisles.length < pasillos) {
-            layoutConfig.aisles.push({
-                id: layoutConfig.aisles.length + 1,
-                x: 50 + layoutConfig.aisles.length * 100,
-                y: 50,
-                width: 50,
-                height: 200,
-                orientation: 'vertical'
-            });
-        }
-    }
-
-    for (let p = 1; p <= pasillos; p++) {
-        const layoutDiv = document.createElement('div');
-        layoutDiv.className = 'aisle-config';
-        
-        const header = document.createElement('h3');
-        header.textContent = `Disposición Pasillo ${p}`;
-        layoutDiv.appendChild(header);
-
-        const xGroup = document.createElement('div');
-        xGroup.className = 'config-group';
-        const xLabel = document.createElement('label');
-        xLabel.className = 'config-label';
-        xLabel.textContent = 'Posición X';
-        const xInput = document.createElement('input');
-        xInput.type = 'number';
-        xInput.className = 'config-input';
-        xInput.value = layoutConfig.aisles[p-1].x || 50;
-        xInput.min = 0;
-        xInput.onchange = () => {
-            layoutConfig.aisles[p-1].x = parseInt(xInput.value) || 50;
-        };
-        xGroup.appendChild(xLabel);
-        xGroup.appendChild(xInput);
-        layoutDiv.appendChild(xGroup);
-
-        const yGroup = document.createElement('div');
-        yGroup.className = 'config-group';
-        const yLabel = document.createElement('label');
-        yLabel.className = 'config-label';
-        yLabel.textContent = 'Posición Y';
-        const yInput = document.createElement('input');
-        yInput.type = 'number';
-        yInput.className = 'config-input';
-        yInput.value = layoutConfig.aisles[p-1].y || 50;
-        yInput.min = 0;
-        yInput.onchange = () => {
-            layoutConfig.aisles[p-1].y = parseInt(yInput.value) || 50;
-        };
-        yGroup.appendChild(yLabel);
-        yGroup.appendChild(yInput);
-        layoutDiv.appendChild(yGroup);
-
-        const orientationGroup = document.createElement('div');
-        orientationGroup.className = 'config-group';
-        const orientationLabel = document.createElement('label');
-        orientationLabel.className = 'config-label';
-        orientationLabel.textContent = 'Orientación';
-        const orientationSelect = document.createElement('select');
-        orientationSelect.className = 'config-input';
-        orientationSelect.innerHTML = `
-            <option value="vertical" ${layoutConfig.aisles[p-1].orientation === 'vertical' ? 'selected' : ''}>Vertical</option>
-            <option value="horizontal" ${layoutConfig.aisles[p-1].orientation === 'horizontal' ? 'selected' : ''}>Horizontal</option>
-        `;
-        orientationSelect.onchange = () => {
-            layoutConfig.aisles[p-1].orientation = orientationSelect.value;
-            layoutConfig.aisles[p-1].width = orientationSelect.value === 'vertical' ? 50 : 200;
-            layoutConfig.aisles[p-1].height = orientationSelect.value === 'vertical' ? 200 : 50;
-        };
-        orientationGroup.appendChild(orientationLabel);
-        orientationGroup.appendChild(orientationSelect);
-        layoutDiv.appendChild(orientationGroup);
-
-        layoutConfigsDiv.appendChild(layoutDiv);
     }
 }
 
