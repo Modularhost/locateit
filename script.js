@@ -1,3 +1,4 @@
+
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot, connectFirestoreEmulator, updateDoc, arrayUnion, arrayRemove } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
@@ -93,6 +94,37 @@ function setupEventListeners() {
     const canvas = document.getElementById('warehouseCanvas');
     canvas.addEventListener('click', handleCanvasClick);
     canvas.addEventListener('mousemove', handleCanvasHover);
+
+    // Nuevos manejadores de eventos
+    const pasillosInput = document.getElementById('pasillosInput');
+    if (pasillosInput) {
+        pasillosInput.addEventListener('change', updateAisleConfigs);
+    }
+
+    const applyBtn = document.getElementById('applyBtn');
+    if (applyBtn) {
+        applyBtn.addEventListener('click', applyChanges);
+    }
+
+    const exportBtn = document.getElementById('exportBtn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', exportData);
+    }
+
+    const importBtn = document.getElementById('importBtn');
+    if (importBtn) {
+        importBtn.addEventListener('click', () => document.getElementById('importFile').click());
+    }
+
+    const pasilloSelect = document.getElementById('pasilloSelect');
+    if (pasilloSelect) {
+        pasilloSelect.addEventListener('change', updateEstanteSelect);
+    }
+
+    const estanteSelect = document.getElementById('estanteSelect');
+    if (estanteSelect) {
+        estanteSelect.addEventListener('change', updateCasillaSelect);
+    }
 }
 
 async function loadLayoutConfig() {
@@ -152,34 +184,27 @@ function drawWarehouseLayout() {
     const canvas = document.getElementById('warehouseCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Ajustar el tamaño del canvas al contenedor
     canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-    canvas.height = 600 * window.devicePixelRatio; // Aumentamos la altura para más espacio
+    canvas.height = 600 * window.devicePixelRatio;
     ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
-    // Limpiar el canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Fondo
     ctx.fillStyle = '#f8f9fa';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Dibujar pasillos
     layoutConfig.aisles.forEach(aisle => {
         const itemCount = allItems.filter(item => item.location.startsWith(`${aisle.id}-`)).length;
         ctx.fillStyle = itemCount > 0 ? '#e3f2fd' : '#ffffff';
         ctx.strokeStyle = '#2c3e50';
         ctx.lineWidth = 2;
 
-        // Ajustar dimensiones según orientación
         const width = aisle.orientation === 'vertical' ? aisle.width : aisle.height;
         const height = aisle.orientation === 'vertical' ? aisle.height : aisle.width;
 
-        // Dibujar rectángulo del pasillo
         ctx.fillRect(aisle.x, aisle.y, width, height);
         ctx.strokeRect(aisle.x, aisle.y, width, height);
 
-        // Texto del pasillo
         ctx.fillStyle = '#2c3e50';
         ctx.font = '14px Arial';
         ctx.textAlign = 'center';
@@ -187,7 +212,6 @@ function drawWarehouseLayout() {
         const textX = aisle.x + width / 2;
         const textY = aisle.y + height / 2;
 
-        // Rotar texto si es horizontal
         if (aisle.orientation === 'horizontal') {
             ctx.save();
             ctx.translate(textX, textY);
@@ -306,10 +330,11 @@ function updateLayoutConfigs() {
         xInput.className = 'config-input';
         xInput.value = layoutConfig.aisles[p-1].x || 50;
         xInput.min = 0;
-        xInput.max = 1000; // Límite para evitar desbordes
-        xInput.onchange = () => {
+        xInput.max = 1000;
+        xInput.addEventListener('change', () => {
             layoutConfig.aisles[p-1].x = parseInt(xInput.value) || 50;
-        };
+            drawWarehouseLayout();
+        });
         xGroup.appendChild(xLabel);
         xGroup.appendChild(xInput);
         layoutDiv.appendChild(xGroup);
@@ -324,10 +349,11 @@ function updateLayoutConfigs() {
         yInput.className = 'config-input';
         yInput.value = layoutConfig.aisles[p-1].y || 50;
         yInput.min = 0;
-        yInput.max = 600; // Límite según altura del canvas
-        yInput.onchange = () => {
+        yInput.max = 600;
+        yInput.addEventListener('change', () => {
             layoutConfig.aisles[p-1].y = parseInt(yInput.value) || 50;
-        };
+            drawWarehouseLayout();
+        });
         yGroup.appendChild(yLabel);
         yGroup.appendChild(yInput);
         layoutDiv.appendChild(yGroup);
@@ -343,9 +369,10 @@ function updateLayoutConfigs() {
         widthInput.value = layoutConfig.aisles[p-1].width || 50;
         widthInput.min = 20;
         widthInput.max = 300;
-        widthInput.onchange = () => {
+        widthInput.addEventListener('change', () => {
             layoutConfig.aisles[p-1].width = parseInt(widthInput.value) || 50;
-        };
+            drawWarehouseLayout();
+        });
         widthGroup.appendChild(widthLabel);
         widthGroup.appendChild(widthInput);
         layoutDiv.appendChild(widthGroup);
@@ -361,9 +388,10 @@ function updateLayoutConfigs() {
         heightInput.value = layoutConfig.aisles[p-1].height || 200;
         heightInput.min = 20;
         heightInput.max = 300;
-        heightInput.onchange = () => {
+        heightInput.addEventListener('change', () => {
             layoutConfig.aisles[p-1].height = parseInt(heightInput.value) || 200;
-        };
+            drawWarehouseLayout();
+        });
         heightGroup.appendChild(heightLabel);
         heightGroup.appendChild(heightInput);
         layoutDiv.appendChild(heightGroup);
@@ -379,16 +407,15 @@ function updateLayoutConfigs() {
             <option value="vertical" ${layoutConfig.aisles[p-1].orientation === 'vertical' ? 'selected' : ''}>Vertical</option>
             <option value="horizontal" ${layoutConfig.aisles[p-1].orientation === 'horizontal' ? 'selected' : ''}>Horizontal</option>
         `;
-        orientationSelect.onchange = () => {
+        orientationSelect.addEventListener('change', () => {
             layoutConfig.aisles[p-1].orientation = orientationSelect.value;
-            // Intercambiar ancho y alto al cambiar orientación
             const temp = layoutConfig.aisles[p-1].width;
             layoutConfig.aisles[p-1].width = layoutConfig.aisles[p-1].height;
             layoutConfig.aisles[p-1].height = temp;
             widthInput.value = layoutConfig.aisles[p-1].width;
             heightInput.value = layoutConfig.aisles[p-1].height;
             drawWarehouseLayout();
-        };
+        });
         orientationGroup.appendChild(orientationLabel);
         orientationGroup.appendChild(orientationSelect);
         layoutDiv.appendChild(orientationGroup);
@@ -397,16 +424,15 @@ function updateLayoutConfigs() {
     }
 }
 
-// Resto del código permanece igual
 function switchView(e) {
     const view = e.target.dataset.view;
     currentView = view;
 
-    document.querySelectorAll('[data-view]').forEach(btn => {
+    document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.view === view);
     });
 
-    document.querySelectorAll('[id$="-view"]').forEach(viewEl => {
+    document.querySelectorAll('.section').forEach(viewEl => {
         viewEl.classList.add('hidden');
     });
     document.getElementById(view + '-view').classList.remove('hidden');
@@ -536,9 +562,9 @@ function updateAisleConfigs() {
         estantesInput.value = warehouseConfig.aisleConfigs[p-1].estantes || 4;
         estantesInput.min = 1;
         estantesInput.max = 8;
-        estantesInput.onchange = () => {
+        estantesInput.addEventListener('change', () => {
             warehouseConfig.aisleConfigs[p-1].estantes = parseInt(estantesInput.value) || 4;
-        };
+        });
         estantesGroup.appendChild(estantesLabel);
         estantesGroup.appendChild(estantesInput);
         configDiv.appendChild(estantesGroup);
@@ -554,15 +580,17 @@ function updateAisleConfigs() {
         casillasInput.value = warehouseConfig.aisleConfigs[p-1].casillas || 6;
         casillasInput.min = 1;
         casillasInput.max = 10;
-        casillasInput.onchange = () => {
+        casillasInput.addEventListener('change', () => {
             warehouseConfig.aisleConfigs[p-1].casillas = parseInt(casillasInput.value) || 6;
-        };
+        });
         casillasGroup.appendChild(casillasLabel);
         casillasGroup.appendChild(casillasInput);
         configDiv.appendChild(casillasGroup);
 
         configsDiv.appendChild(configDiv);
     }
+
+    updateLayoutConfigs();
 }
 
 async function applyChanges() {
@@ -579,7 +607,7 @@ async function applyChanges() {
         showNotification('Configuración aplicada correctamente');
     } catch (error) {
         console.error('Error al aplicar cambios:', error);
-        alert('Error al aplicar los cambios');
+        showNotification('Error al aplicar los cambios', 'error');
     }
 }
 
@@ -784,7 +812,7 @@ async function removeItem(itemId) {
             showNotification('Ítem eliminado correctamente');
         } catch (error) {
             console.error('Error al eliminar ítem:', error);
-            alert('Error al eliminar el ítem');
+            showNotification('Error al eliminar el ítem', 'error');
         }
     }
 }
@@ -806,7 +834,7 @@ async function clearAllItems() {
             showNotification('Todos los ítems eliminados');
         } catch (error) {
             console.error('Error al eliminar todos los ítems:', error);
-            alert('Error al eliminar los ítems');
+            showNotification('Error al eliminar los ítems', 'error');
         }
     }
 }
@@ -917,7 +945,7 @@ async function bulkDelete() {
             showNotification('Ítems eliminados correctamente');
         } catch (error) {
             console.error('Error al eliminar ítems:', error);
-            alert('Error al eliminar los ítems');
+            showNotification('Error al eliminar los ítems', 'error');
         }
     }
 }
@@ -1041,6 +1069,118 @@ function nextPage() {
     }
 }
 
+async function loadCatalog() {
+    try {
+        const querySnapshot = await getDocs(collection(db, 'catalog'));
+        allCatalog = [];
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            allCatalog.push({
+                id: doc.id,
+                code: data.code,
+                description: data.description
+            });
+        });
+        filteredCatalog = [...allCatalog];
+        document.getElementById('catalogoCount').textContent = allCatalog.length;
+    } catch (error) {
+        console.error('Error al cargar catálogo:', error);
+    }
+}
+
+async function addToCatalog() {
+    const code = document.getElementById('catalogCode').value.trim().toUpperCase();
+    const description = document.getElementById('catalogDescription').value.trim();
+
+    if (!code || !description) {
+        showNotification('Por favor, completa todos los campos.', 'error');
+        return;
+    }
+
+    if (allCatalog.some(item => item.code.toLowerCase() === code.toLowerCase())) {
+        showNotification('El código ya existe en el catálogo.', 'error');
+        return;
+    }
+
+    try {
+        await setDoc(doc(db, 'catalog', code), {
+            code,
+            description
+        });
+        await loadCatalog();
+        updateCatalogTable();
+        document.getElementById('catalogCode').value = '';
+        document.getElementById('catalogDescription').value = '';
+        showNotification('Producto añadido al catálogo correctamente.');
+    } catch (error) {
+        console.error('Error al añadir al catálogo:', error);
+        showNotification('Error al añadir al catálogo.', 'error');
+    }
+}
+
+function updateCatalogTable() {
+    const tbody = document.getElementById('catalogTableBody');
+    tbody.innerHTML = '';
+
+    const startIndex = (currentCatalogPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const pageItems = filteredCatalog.slice(startIndex, endIndex);
+
+    pageItems.forEach(item => {
+        const itemsInWarehouse = allItems.filter(i => i.code.toLowerCase() === item.code.toLowerCase()).length;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><strong style="font-family: monospace; background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 4px;">${item.code}</strong></td>
+            <td>${item.description}</td>
+            <td>${itemsInWarehouse}</td>
+            <td>
+                <button class="btn btn-secondary" onclick="removeFromCatalog('${item.id}')" 
+                        style="padding: 0.25rem 0.5rem; font-size: 0.8rem; background: #dc3545; color: white;">🗑️</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+
+    const totalPages = Math.ceil(filteredCatalog.length / itemsPerPage);
+    document.getElementById('currentCatalogPage').textContent = currentCatalogPage;
+    document.getElementById('totalCatalogPages').textContent = totalPages;
+    document.getElementById('prevCatalogBtn').disabled = currentCatalogPage <= 1;
+    document.getElementById('nextCatalogBtn').disabled = currentCatalogPage >= totalPages;
+}
+
+async function removeFromCatalog(itemId) {
+    if (confirm('¿Estás seguro de que quieres eliminar este producto del catálogo?')) {
+        try {
+            await deleteDoc(doc(db, 'catalog', itemId));
+            await loadCatalog();
+            updateCatalogTable();
+            showNotification('Producto eliminado del catálogo.');
+        } catch (error) {
+            console.error('Error al eliminar del catálogo:', error);
+            showNotification('Error al eliminar del catálogo.', 'error');
+        }
+    }
+}
+
+async function clearCatalog() {
+    if (confirm('¿Estás seguro de que quieres eliminar TODOS los productos del catálogo?')) {
+        try {
+            const querySnapshot = await getDocs(collection(db, 'catalog'));
+            const deletePromises = [];
+            querySnapshot.forEach((docSnapshot) => {
+                deletePromises.push(deleteDoc(doc(db, 'catalog', docSnapshot.id)));
+            });
+            await Promise.all(deletePromises);
+            await loadCatalog();
+            updateCatalogTable();
+            showNotification('Catálogo limpiado correctamente.');
+        } catch (error) {
+            console.error('Error al limpiar catálogo:', error);
+            showNotification('Error al limpiar el catálogo.', 'error');
+        }
+    }
+}
+
 function previousCatalogPage() {
     if (currentCatalogPage > 1) {
         currentCatalogPage--;
@@ -1056,109 +1196,6 @@ function nextCatalogPage() {
     }
 }
 
-async function loadCatalog() {
-    try {
-        const querySnapshot = await getDocs(collection(db, 'catalog'));
-        allCatalog = [];
-        querySnapshot.forEach((doc) => {
-            allCatalog.push({ id: doc.id, ...doc.data() });
-        });
-        filteredCatalog = [...allCatalog];
-        document.getElementById('catalogoCount').textContent = allCatalog.length;
-    } catch (error) {
-        console.error('Error al cargar catálogo:', error);
-    }
-}
-
-async function addToCatalog() {
-    const code = document.getElementById('catalogCode').value.trim().toUpperCase();
-    const description = document.getElementById('catalogDescription').value.trim();
-
-    if (!code || !description) {
-        alert('El código y la descripción son requeridos');
-        return;
-    }
-
-    if (allCatalog.find(item => item.code === code)) {
-        alert('Este código ya existe en el catálogo');
-        return;
-    }
-
-    const catalogData = {
-        code: code,
-        description: description,
-        timestamp: new Date().toISOString()
-    };
-
-    try {
-        await setDoc(doc(db, 'catalog', code), catalogData);
-        await loadCatalog();
-        updateCatalogTable();
-        document.getElementById('catalogCode').value = '';
-        document.getElementById('catalogDescription').value = '';
-        showNotification('Producto agregado al catálogo');
-    } catch (error) {
-        console.error('Error al agregar al catálogo:', error);
-        alert('Error al agregar el producto al catálogo');
-    }
-}
-
-async function removeCatalogItem(code) {
-    if (confirm('¿Estás seguro de que quieres eliminar este producto del catálogo?')) {
-        try {
-            await deleteDoc(doc(db, 'catalog', code));
-            await loadCatalog();
-            updateCatalogTable();
-            showNotification('Producto eliminado del catálogo');
-        } catch (error) {
-            console.error('Error al eliminar del catálogo:', error);
-            alert('Error al eliminar el producto');
-        }
-    }
-}
-
-async function quickLocateItem(code) {
-    const catalogItem = allCatalog.find(item => item.code === code);
-    if (!catalogItem) return;
-
-    document.getElementById('itemCode').value = code;
-    document.getElementById('itemDescription').value = catalogItem.description;
-    switchView({ target: { dataset: { view: 'items' } } });
-}
-
-function updateCatalogTable() {
-    const tbody = document.getElementById('catalogTableBody');
-    tbody.innerHTML = '';
-
-    const startIndex = (currentCatalogPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const pageItems = filteredCatalog.slice(startIndex, endIndex);
-
-    pageItems.forEach(item => {
-        const row = document.createElement('tr');
-        const inWarehouse = allItems.filter(i => i.code === item.code).length;
-        
-        row.innerHTML = `
-            <td><strong style="font-family: monospace; background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 4px;">${item.code}</strong></td>
-            <td>${item.description}</td>
-            <td>${inWarehouse} unidad${inWarehouse !== 1 ? 'es' : ''}</td>
-            <td>
-                <button class="btn btn-secondary" onclick="quickLocateItem('${item.code}')" 
-                        style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.25rem;">📍</button>
-                <button class="btn btn-secondary" onclick="removeCatalogItem('${item.code}')" 
-                        style="padding: 0.25rem 0.5rem; font-size: 0.8rem; background: #dc3545; color: white;">🗑️</button>
-            </td>
-        `;
-        tbody.appendChild(row);
-    });
-
-    const totalPages = Math.ceil(filteredCatalog.length / itemsPerPage);
-    document.getElementById('currentCatalogPage').textContent = currentCatalogPage;
-    document.getElementById('totalCatalogPages').textContent = totalPages;
-    document.getElementById('prevCatalogBtn').disabled = currentCatalogPage <= 1;
-    document.getElementById('nextCatalogBtn').disabled = currentCatalogPage >= totalPages;
-}
-
 function handleCatalogSearch() {
     const query = document.getElementById('catalogSearchInput').value.toLowerCase();
     if (!query) {
@@ -1171,176 +1208,6 @@ function handleCatalogSearch() {
     }
     currentCatalogPage = 1;
     updateCatalogTable();
-}
-
-function exportCatalog() {
-    const data = {
-        catalog: allCatalog,
-        exportDate: new Date().toISOString(),
-        count: allCatalog.length
-    };
-
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `catalogo_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    showNotification('Catálogo exportado correctamente');
-}
-
-async function importCatalogCSV(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async function(e) {
-        try {
-            const lines = e.target.result.split('\n').filter(line => line.trim());
-            const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-            
-            const requiredColumns = ['code', 'description'];
-            const hasRequired = requiredColumns.every(col => headers.includes(col));
-            
-            if (!hasRequired) {
-                alert('El CSV debe contener al menos las columnas: code, description');
-                return;
-            }
-
-            const importPromises = [];
-            
-            for (let i = 1; i < lines.length; i++) {
-                const values = lines[i].split(',').map(v => v.trim().replace(/^"(.*)"$/, '$1'));
-                const item = {};
-                
-                headers.forEach((header, index) => {
-                    item[header] = values[index] || '';
-                });
-
-                if (item.code && item.description) {
-                    importPromises.push(
-                        setDoc(doc(db, 'catalog', item.code), {
-                            code: item.code,
-                            description: item.description,
-                            timestamp: new Date().toISOString()
-                        })
-                    );
-                }
-            }
-
-            await Promise.all(importPromises);
-            await loadCatalog();
-            updateCatalogTable();
-            showNotification('Catálogo importado correctamente');
-        } catch (error) {
-            console.error('Error al importar catálogo:', error);
-            alert('Error al importar el catálogo. Verifica el formato del archivo.');
-        }
-    };
-    
-    reader.readAsText(file);
-}
-
-async function clearCatalog() {
-    if (confirm('¿Estás seguro de que quieres eliminar TODOS los productos del catálogo? Esta acción no se puede deshacer.')) {
-        try {
-            const querySnapshot = await getDocs(collection(db, 'catalog'));
-            const deletePromises = [];
-            querySnapshot.forEach((docSnapshot) => {
-                deletePromises.push(deleteDoc(doc(db, 'catalog', docSnapshot.id)));
-            });
-            await Promise.all(deletePromises);
-            await loadCatalog();
-            updateCatalogTable();
-            showNotification('Catálogo limpiado');
-        } catch (error) {
-            console.error('Error al limpiar catálogo:', error);
-            alert('Error al limpiar el catálogo');
-        }
-    }
-}
-
-function autoFillDescription() {
-    const code = document.getElementById('itemCode').value.trim().toUpperCase();
-    const descriptionInput = document.getElementById('itemDescription');
-    const catalogItem = allCatalog.find(item => item.code === code);
-    descriptionInput.value = catalogItem ? catalogItem.description : '';
-}
-
-function autoFillModalDescription() {
-    const code = document.getElementById('modalItemCode').value.trim().toUpperCase();
-    const descriptionInput = document.getElementById('modalItemDescription');
-    const catalogItem = allCatalog.find(item => item.code === code);
-    descriptionInput.value = catalogItem ? catalogItem.description : '';
-}
-
-function openCasillModal(location) {
-    currentCasilla = location;
-    document.getElementById('modalTitle').textContent = `Gestionar Casilla ${location.split('-')[1]}-${location.split('-')[2]}`;
-    document.getElementById('modalItemCode').value = '';
-    document.getElementById('modalItemDescription').value = '';
-    const itemsList = document.getElementById('modalItemsList');
-    itemsList.innerHTML = '';
-
-    const itemsInCasilla = allItems.filter(item => item.location === location);
-    if (itemsInCasilla.length === 0) {
-        itemsList.innerHTML = '<p>No hay ítems en esta casilla.</p>';
-    } else {
-        const ul = document.createElement('ul');
-        itemsInCasilla.forEach(item => {
-            const li = document.createElement('li');
-            li.innerHTML = `
-                ${item.code} - ${item.description}
-                <button class="btn btn-secondary" onclick="removeItem('${item.id}')" 
-                        style="padding: 0.25rem 0.5rem; font-size: 0.8rem; background: #dc3545; color: white;">🗑️</button>
-            `;
-            ul.appendChild(li);
-        });
-        itemsList.appendChild(ul);
-    }
-
-    document.getElementById('casillModal').style.display = 'block';
-}
-
-function closeCasillModal() {
-    document.getElementById('casillModal').style.display = 'none';
-    currentCasilla = null;
-}
-
-function openItemModal(item) {
-    document.getElementById('itemCodeView').textContent = item.code;
-    document.getElementById('itemDescriptionView').textContent = item.description || '';
-    document.getElementById('itemLocationView').textContent = item.location;
-    document.getElementById('itemModal').style.display = 'block';
-}
-
-function closeItemModal() {
-    document.getElementById('itemModal').style.display = 'none';
-}
-
-function showNotification(message, type = 'success') {
-    const notification = document.createElement('div');
-    notification.className = 'notification';
-    notification.textContent = message;
-    if (type === 'error') {
-        notification.style.background = '#f8d7da';
-        notification.style.color = '#721c24';
-        notification.style.borderColor = '#f5c6cb';
-    }
-    document.body.appendChild(notification);
-    setTimeout(() => {
-        notification.classList.add('show');
-    }, 10);
-    setTimeout(() => {
-        notification.classList.remove('show');
-        setTimeout(() => {
-            notification.remove();
-        }, 300);
-    }, 3000);
 }
 
 function updateLocationSelectors() {
@@ -1366,6 +1233,7 @@ function updateEstanteSelect() {
     const pasillo = document.getElementById('pasilloSelect').value;
     const estanteSelect = document.getElementById('estanteSelect');
     const casillaSelect = document.getElementById('casillaSelect');
+
     estanteSelect.innerHTML = '<option value="">Seleccionar estante</option>';
     casillaSelect.innerHTML = '<option value="">Seleccionar casilla</option>';
     estanteSelect.disabled = !pasillo;
@@ -1387,6 +1255,7 @@ function updateCasillaSelect() {
     const pasillo = document.getElementById('pasilloSelect').value;
     const estante = document.getElementById('estanteSelect').value;
     const casillaSelect = document.getElementById('casillaSelect');
+
     casillaSelect.innerHTML = '<option value="">Seleccionar casilla</option>';
     casillaSelect.disabled = !estante;
 
@@ -1401,6 +1270,200 @@ function updateCasillaSelect() {
     }
 }
 
+function openCasillModal(location) {
+    currentCasilla = location;
+    const modal = document.getElementById('casillModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalItemsList = document.getElementById('modalItemsList');
+    modalTitle.textContent = `Gestionar Casilla ${location}`;
+    modalItemsList.innerHTML = '';
+
+    const itemsInCasilla = allItems.filter(item => item.location === location);
+    const ul = document.createElement('ul');
+    itemsInCasilla.forEach(item => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+            <span>${item.code} - ${item.description}</span>
+            <button class="btn btn-secondary" onclick="removeItem('${item.id}')" 
+                    style="padding: 0.25rem 0.5rem; font-size: 0.8rem; background: #dc3545; color: white;">🗑️</button>
+        `;
+        ul.appendChild(li);
+    });
+    modalItemsList.appendChild(ul);
+
+    document.getElementById('modalItemCode').value = '';
+    document.getElementById('modalItemDescription').value = '';
+    modal.style.display = 'block';
+}
+
+function closeCasillModal() {
+    document.getElementById('casillModal').style.display = 'none';
+    currentCasilla = null;
+}
+
+function openItemModal(item) {
+    const modal = document.getElementById('itemModal');
+    document.getElementById('itemCodeView').textContent = item.code;
+    document.getElementById('itemDescriptionView').textContent = item.description || '';
+    document.getElementById('itemLocationView').textContent = item.location;
+    modal.style.display = 'block';
+}
+
+function closeItemModal() {
+    document.getElementById('itemModal').style.display = 'none';
+}
+
+function autoFillDescription() {
+    const code = document.getElementById('itemCode').value.trim().toUpperCase();
+    const descriptionInput = document.getElementById('itemDescription');
+    const catalogItem = allCatalog.find(item => item.code.toLowerCase() === code.toLowerCase());
+    descriptionInput.value = catalogItem ? catalogItem.description : '';
+}
+
+function autoFillModalDescription() {
+    const code = document.getElementById('modalItemCode').value.trim().toUpperCase();
+    const descriptionInput = document.getElementById('modalItemDescription');
+    const catalogItem = allCatalog.find(item => item.code.toLowerCase() === code.toLowerCase());
+    descriptionInput.value = catalogItem ? catalogItem.description : '';
+}
+
+async function exportData() {
+    const data = {
+        items: allItems,
+        config: warehouseConfig,
+        layout: layoutConfig,
+        exportDate: new Date().toISOString()
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `warehouse_data_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showNotification('Datos exportados correctamente');
+}
+
+async function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+
+        if (data.items && Array.isArray(data.items)) {
+            const writePromises = [];
+            const locations = new Set(data.items.map(item => item.location));
+            locations.forEach(location => {
+                const itemsInLocation = data.items.filter(item => item.location === location);
+                writePromises.push(setDoc(doc(db, 'items', location), {
+                    location,
+                    items: itemsInLocation.map(item => ({
+                        code: item.code,
+                        description: item.description,
+                        timestamp: item.timestamp || new Date().toISOString()
+                    }))
+                }));
+            });
+            await Promise.all(writePromises);
+        }
+
+        if (data.config) {
+            warehouseConfig = data.config;
+            await saveWarehouseConfig();
+        }
+
+        if (data.layout) {
+            layoutConfig = data.layout;
+            await saveLayoutConfig();
+        }
+
+        await loadItems();
+        await loadWarehouseConfig();
+        await loadLayoutConfig();
+        updateAisleConfigs();
+        updateLayoutConfigs();
+        generateWarehouse();
+        drawWarehouseLayout();
+        updateItemsTable();
+        updateLocationSelectors();
+        showNotification('Datos importados correctamente');
+    } catch (error) {
+        console.error('Error al importar datos:', error);
+        showNotification('Error al importar datos.', 'error');
+    }
+}
+
+async function exportCatalog() {
+    const data = {
+        catalog: allCatalog,
+        exportDate: new Date().toISOString()
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `catalog_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showNotification('Catálogo exportado correctamente');
+}
+
+async function importCatalogCSV(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+        const text = await file.text();
+        const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+        const writePromises = [];
+        
+        for (let i = 1; i < lines.length; i++) {
+            const [code, description] = lines[i].split(',').map(item => item.trim());
+            if (code && description && !allCatalog.some(item => item.code.toLowerCase() === code.toLowerCase())) {
+                writePromises.push(setDoc(doc(db, 'catalog', code), {
+                    code,
+                    description
+                }));
+            }
+        }
+        
+        await Promise.all(writePromises);
+        await loadCatalog();
+        updateCatalogTable();
+        showNotification('Catálogo importado correctamente');
+    } catch (error) {
+        console.error('Error al importar catálogo:', error);
+        showNotification('Error al importar el catálogo.', 'error');
+    }
+}
+
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.classList.add('show');
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        }, 3000);
+    }, 100);
+}
+
 function sortItems(field) {
     if (sortField === field) {
         sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
@@ -1410,27 +1473,22 @@ function sortItems(field) {
     }
 
     filteredItems.sort((a, b) => {
-        let valA = a[field];
-        let valB = b[field];
-
+        const valA = a[field] || '';
+        const valB = b[field] || '';
         if (field === 'timestamp') {
-            valA = new Date(valA || Date.now()).getTime();
-            valB = new Date(valB || Date.now()).getTime();
-        } else {
-            valA = (valA || '').toLowerCase();
-            valB = (valB || '').toLowerCase();
+            return sortDirection === 'asc' 
+                ? new Date(valA) - new Date(valB) 
+                : new Date(valB) - new Date(valA);
         }
-
-        if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
-        if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
-        return 0;
+        return sortDirection === 'asc' 
+            ? valA.localeCompare(valB) 
+            : valB.localeCompare(valA);
     });
 
-    document.querySelectorAll('[id^="sort-"]').forEach(span => {
+    document.querySelectorAll('.items-table th span').forEach(span => {
         span.textContent = '↕️';
     });
     document.getElementById(`sort-${field}`).textContent = sortDirection === 'asc' ? '↑' : '↓';
-
     currentPage = 1;
     updateItemsTable();
 }
@@ -1444,90 +1502,48 @@ function sortCatalog(field) {
     }
 
     filteredCatalog.sort((a, b) => {
-        let valA = a[field];
-        let valB = b[field];
-
-        valA = (valA || '').toLowerCase();
-        valB = (valB || '').toLowerCase();
-
-        if (valA < valB) return catalogSortDirection === 'asc' ? -1 : 1;
-        if (valA > valB) return catalogSortDirection === 'asc' ? 1 : -1;
-        return 0;
+        const valA = a[field] || '';
+        const valB = b[field] || '';
+        return catalogSortDirection === 'asc' 
+            ? valA.localeCompare(valB) 
+            : valB.localeCompare(valA);
     });
 
-    document.querySelectorAll('[id^="sort-catalog-"]').forEach(span => {
+    document.querySelectorAll('#catalogTableBody th span').forEach(span => {
         span.textContent = '↕️';
     });
     document.getElementById(`sort-catalog-${field}`).textContent = catalogSortDirection === 'asc' ? '↑' : '↓';
-
     currentCatalogPage = 1;
     updateCatalogTable();
 }
 
-function exportData() {
-    const data = {
-        items: allItems,
-        exportDate: new Date().toISOString(),
-        count: allItems.length
-    };
-
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `items_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    showNotification('Datos exportados correctamente');
-}
-
-async function importData(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async function(e) {
-        try {
-            const data = JSON.parse(e.target.result);
-            if (!data.items || !Array.isArray(data.items)) {
-                alert('Formato de archivo inválido');
-                return;
-            }
-
-            const importPromises = [];
-
-            const groupedItems = {};
-            data.items.forEach(item => {
-                if (!groupedItems[item.location]) {
-                    groupedItems[item.location] = [];
-                }
-                groupedItems[item.location].push({
-                    code: item.code,
-                    description: item.description,
-                    timestamp: item.timestamp || new Date().toISOString()
-                });
-            });
-
-            for (const location in groupedItems) {
-                const items = groupedItems[location];
-                const docRef = doc(db, 'items', location);
-                importPromises.push(setDoc(docRef, { location, items }));
-            }
-
-            await Promise.all(importPromises);
-            await loadItems();
-            generateWarehouse();
-            updateItemsTable();
-            updateLocationSelectors();
-            showNotification('Datos importados correctamente');
-        } catch (error) {
-            console.error('Error al importar datos:', error);
-            alert('Error al importar los datos. Verifica el formato del archivo.');
-        }
-    };
-    
-    reader.readAsText(file);
-}
+// Exponer funciones al ámbito global
+window.applyChanges = applyChanges;
+window.updateAisleConfigs = updateAisleConfigs;
+window.updateEstanteSelect = updateEstanteSelect;
+window.updateCasillaSelect = updateCasillaSelect;
+window.addItem = addItem;
+window.saveItemToModal = saveItemToModal;
+window.removeItem = removeItem;
+window.clearAllItems = clearAllItems;
+window.bulkDelete = bulkDelete;
+window.bulkExport = bulkExport;
+window.editItemInline = editItemInline;
+window.closeCasillModal = closeCasillModal;
+window.closeItemModal = closeItemModal;
+window.autoFillDescription = autoFillDescription;
+window.autoFillModalDescription = autoFillModalDescription;
+window.exportData = exportData;
+window.importData = importData;
+window.addToCatalog = addToCatalog;
+window.removeFromCatalog = removeFromCatalog;
+window.clearCatalog = clearCatalog;
+window.exportCatalog = exportCatalog;
+window.importCatalogCSV = importCatalogCSV;
+window.toggleSelectAll = toggleSelectAll;
+window.previousPage = previousPage;
+window.nextPage = nextPage;
+window.previousCatalogPage = previousCatalogPage;
+window.nextCatalogPage = nextCatalogPage;
+window.sortItems = sortItems;
+window.sortCatalog = sortCatalog;
