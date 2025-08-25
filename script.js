@@ -209,8 +209,9 @@ function drawWarehouseLayout() {
         ctx.strokeStyle = '#2c3e50';
         ctx.lineWidth = 2;
 
-        const width = aisle.width;
-        const height = aisle.height;
+        // CORRECCIÓN: Usar las dimensiones directamente sin intercambiar
+        const width = aisle.width;  // Usar width tal como está almacenado
+        const height = aisle.height; // Usar height tal como está almacenado
 
         if (isDragging && draggedAisle && draggedAisle.id === aisle.id) {
             ctx.fillStyle = 'rgba(0, 123, 255, 0.3)';
@@ -226,14 +227,16 @@ function drawWarehouseLayout() {
         const textX = aisle.x + width / 2;
         const textY = aisle.y + height / 2;
 
-        if (aisle.orientation === 'vertical') {
-            ctx.fillText(`Pasillo ${aisle.id} (${itemCount})`, textX, textY);
-        } else {
+        // El texto se rota solo para pasillos horizontales (cuando width > height)
+        if (aisle.orientation === 'horizontal') {
             ctx.save();
             ctx.translate(textX, textY);
             ctx.rotate(-Math.PI / 2);
             ctx.fillText(`Pasillo ${aisle.id} (${itemCount})`, 0, 0);
             ctx.restore();
+        } else {
+            // Para pasillos verticales, el texto va normal
+            ctx.fillText(`Pasillo ${aisle.id} (${itemCount})`, textX, textY);
         }
     });
 }
@@ -251,8 +254,8 @@ function handleCanvasMouseDown(event) {
 
     const { x, y } = getMousePosition(event);
     draggedAisle = layoutConfig.aisles.find(aisle => {
-        const width = aisle.width;
-        const height = aisle.height;
+        const width = aisle.width;   // Usar dimensiones directas
+        const height = aisle.height; // Usar dimensiones directas
         return x >= aisle.x && x <= aisle.x + width &&
                y >= aisle.y && y <= aisle.y + height;
     });
@@ -270,8 +273,8 @@ function handleCanvasMouseMove(event) {
     const { x, y } = getMousePosition(event);
 
     if (isDragging && draggedAisle) {
-        const width = draggedAisle.orientation === 'vertical' ? draggedAisle.width : draggedAisle.height;
-        const height = draggedAisle.orientation === 'vertical' ? draggedAisle.height : draggedAisle.width;
+        const width = draggedAisle.width;   // Usar dimensiones directas
+        const height = draggedAisle.height; // Usar dimensiones directas
 
         draggedAisle.x = Math.max(0, Math.min(x - dragStartX, canvas.width / window.devicePixelRatio - width));
         draggedAisle.y = Math.max(0, Math.min(y - dragStartY, canvas.height / window.devicePixelRatio - height));
@@ -282,8 +285,8 @@ function handleCanvasMouseMove(event) {
     }
 
     const hoveredAisle = layoutConfig.aisles.find(aisle => {
-        const width = aisle.width;
-        const height = aisle.height;
+        const width = aisle.width;   // Usar dimensiones directas
+        const height = aisle.height; // Usar dimensiones directas
         return x >= aisle.x && x <= aisle.x + width &&
                y >= aisle.y && y <= aisle.y + height;
     });
@@ -292,8 +295,8 @@ function handleCanvasMouseMove(event) {
     drawWarehouseLayout();
     if (hoveredAisle) {
         const ctx = canvas.getContext('2d');
-        const width = hoveredAisle.orientation === 'vertical' ? hoveredAisle.width : hoveredAisle.height;
-        const height = hoveredAisle.orientation === 'vertical' ? hoveredAisle.height : hoveredAisle.width;
+        const width = hoveredAisle.width;   // Usar dimensiones directas
+        const height = hoveredAisle.height; // Usar dimensiones directas
         ctx.fillStyle = 'rgba(0, 123, 255, 0.2)';
         ctx.fillRect(hoveredAisle.x, hoveredAisle.y, width, height);
         ctx.fillStyle = '#2c3e50';
@@ -302,14 +305,14 @@ function handleCanvasMouseMove(event) {
         ctx.textBaseline = 'middle';
         const textX = hoveredAisle.x + width / 2;
         const textY = hoveredAisle.y + height / 2;
-        if (hoveredAisle.orientation === 'vertical') {
-            ctx.fillText(`Pasillo ${hoveredAisle.id} (${allItems.filter(item => item.location.startsWith(`${hoveredAisle.id}-`)).length})`, textX, textY);
-        } else {
+        if (hoveredAisle.orientation === 'horizontal') {
             ctx.save();
             ctx.translate(textX, textY);
             ctx.rotate(-Math.PI / 2);
             ctx.fillText(`Pasillo ${hoveredAisle.id} (${allItems.filter(item => item.location.startsWith(`${hoveredAisle.id}-`)).length})`, 0, 0);
             ctx.restore();
+        } else {
+            ctx.fillText(`Pasillo ${hoveredAisle.id} (${allItems.filter(item => item.location.startsWith(`${hoveredAisle.id}-`)).length})`, textX, textY);
         }
     }
 }
@@ -331,8 +334,8 @@ function handleCanvasClick(event) {
 
     const { x, y } = getMousePosition(event);
     const clickedAisle = layoutConfig.aisles.find(aisle => {
-        const width = aisle.width;
-        const height = aisle.height;
+        const width = aisle.width;   // Usar dimensiones directas
+        const height = aisle.height; // Usar dimensiones directas
         return x >= aisle.x && x <= aisle.x + width &&
                y >= aisle.y && y <= aisle.y + height;
     });
