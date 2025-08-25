@@ -228,8 +228,15 @@ function drawWarehouseLayout() {
         const textX = aisle.x + width / 2;
         const textY = aisle.y + height / 2;
 
-        // Texto siempre horizontal, sin rotación
-        ctx.fillText(`Pasillo ${aisle.id} (${itemCount})`, textX, textY);
+        if (aisle.orientation === 'vertical') {
+            ctx.save();
+            ctx.translate(textX, textY);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText(`Pasillo ${aisle.id} (${itemCount})`, 0, 0);
+            ctx.restore();
+        } else {
+            ctx.fillText(`Pasillo ${aisle.id} (${itemCount})`, textX, textY);
+        }
     });
 }
 
@@ -297,8 +304,15 @@ function handleCanvasMouseMove(event) {
         ctx.textBaseline = 'middle';
         const textX = hoveredAisle.x + width / 2;
         const textY = hoveredAisle.y + height / 2;
-        // Texto siempre horizontal, sin rotación
-        ctx.fillText(`Pasillo ${hoveredAisle.id} (${allItems.filter(item => item.location.startsWith(`${hoveredAisle.id}-`)).length})`, textX, textY);
+        if (hoveredAisle.orientation === 'vertical') {
+            ctx.save();
+            ctx.translate(textX, textY);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText(`Pasillo ${hoveredAisle.id} (${allItems.filter(item => item.location.startsWith(`${hoveredAisle.id}-`)).length})`, 0, 0);
+            ctx.restore();
+        } else {
+            ctx.fillText(`Pasillo ${hoveredAisle.id} (${allItems.filter(item => item.location.startsWith(`${hoveredAisle.id}-`)).length})`, textX, textY);
+        }
     }
 }
 
