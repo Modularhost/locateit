@@ -100,7 +100,8 @@ body {
 .nav-btn:not(.active) {
     background: #f8f9fa;
     color: #666;
-    border: 1px solid #e1e8ed;
+    border: 1px solid #e1e8ed
+
 }
 
 .nav-btn:hover {
@@ -390,6 +391,12 @@ body {
     transform: translateX(0);
 }
 
+.notification.error {
+    background: #f8d7da;
+    color: #721c24;
+    border-color: #f5c6cb;
+}
+
 .auto-save {
     font-size: 0.8rem;
     color: #666;
@@ -488,14 +495,34 @@ body {
     border-bottom: none;
 }
 
+.item-count-badge {
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    background: #dc3545;
+    color: white;
+    border-radius: 50%;
+    padding: 1px 3px;
+    font-size: 0.6rem;
+    line-height: 1;
+}
+
 @media (max-width: 768px) {
     .nav-controls {
         flex-direction: column;
         gap: 0.4rem;
+        align-items: stretch;
     }
 
     .search-input {
         width: 100%;
+        font-size: 0.8rem;
+    }
+
+    .nav-btn {
+        width: 100%;
+        padding: 0.5rem;
+        font-size: 0.8rem;
     }
 
     .add-item-form {
@@ -512,26 +539,170 @@ body {
 
     .warehouse-grid {
         grid-template-columns: 1fr;
+        gap: 0.5rem;
     }
 
     .casilla {
-        font-size: 0.6rem;
-        padding: 0.15rem;
+        font-size: 0.55rem;
+        padding: 0.1rem;
+        min-width: 32px;
     }
 
     .casillas-grid {
-        grid-template-columns: repeat(6, 35px);
+        grid-template-columns: repeat(6, 32px);
+        gap: 0.3rem;
+    }
+
+    .items-table th,
+    .items-table td {
+        padding: 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 5% auto;
+        padding: 1rem;
+    }
+
+    .pagination {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .btn {
+        padding: 0.5rem;
+        font-size: 0.8rem;
     }
 }
 
-.item-count-badge {
-    position: absolute;
-    top: 1px;
-    right: 1px;
-    background: #dc3545;
-    color: white;
-    border-radius: 50%;
-    padding: 1px 3px;
-    font-size: 0.6rem;
-    line-height: 1;
+@media (max-width: 480px) {
+    body {
+        font-size: 0.85rem;
+    }
+
+    .header {
+        padding: 0.5rem;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .logo h1 {
+        font-size: 1.1rem;
+    }
+
+    .logo-icon {
+        width: 24px;
+        height: 24px;
+        font-size: 0.8rem;
+    }
+
+    .container {
+        margin-top: 120px;
+        padding: 0.5rem;
+    }
+
+    .section {
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .section h2 {
+        font-size: 1rem;
+    }
+
+    .warehouse-grid {
+        gap: 0.3rem;
+    }
+
+    .pasillo {
+        min-width: 100%;
+    }
+
+    .pasillo-header {
+        font-size: 0.8rem;
+        padding: 0.5rem;
+    }
+
+    .estante-label {
+        font-size: 0.7rem;
+    }
+
+    .casillas-grid {
+        grid-template-columns: repeat(6, 28px);
+        gap: 0.2rem;
+    }
+
+    .casilla {
+        min-width: 28px;
+        font-size: 0.5rem;
+        padding: 0.1rem;
+    }
+
+    .item-count-badge {
+        font-size: 0.5rem;
+        padding: 1px 2px;
+        top: 0;
+        right: 0;
+    }
+
+    .add-item-form {
+        gap: 0.5rem;
+    }
+
+    .location-controls {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    .config-group {
+        margin-bottom: 0.5rem;
+    }
+
+    .config-input {
+        padding: 0.4rem;
+        font-size: 0.8rem;
+    }
+
+    .items-table th,
+    .items-table td {
+        padding: 0.4rem;
+        font-size: 0.7rem;
+    }
+
+    .items-table th:nth-child(5),
+    .items-table td:nth-child(5),
+    .items-table th:nth-child(3),
+    .items-table td:nth-child(3) {
+        display: none;
+    }
+
+    .modal-content {
+        width: 98%;
+        padding: 0.8rem;
+        margin: 2% auto;
+    }
+
+    .modal-content h3 {
+        font-size: 1rem;
+    }
+
+    .close {
+        font-size: 1rem;
+    }
+
+    .notification {
+        top: 100px;
+        right: 10px;
+        padding: 0.5rem 0.8rem;
+        font-size: 0.75rem;
+    }
+
+    .canvas-container {
+        overflow-x: auto;
+    }
+
+    #warehouseCanvas {
+        min-width: 300px;
+    }
 }
