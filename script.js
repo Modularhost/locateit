@@ -209,8 +209,8 @@ function drawWarehouseLayout() {
         ctx.strokeStyle = '#2c3e50';
         ctx.lineWidth = 2;
 
-        const width = aisle.orientation === 'vertical' ? aisle.width : aisle.height;
-        const height = aisle.orientation === 'vertical' ? aisle.height : aisle.width;
+        const width = aisle.width;
+        const height = aisle.height;
 
         if (isDragging && draggedAisle && draggedAisle.id === aisle.id) {
             ctx.fillStyle = 'rgba(0, 123, 255, 0.3)';
@@ -251,8 +251,8 @@ function handleCanvasMouseDown(event) {
 
     const { x, y } = getMousePosition(event);
     draggedAisle = layoutConfig.aisles.find(aisle => {
-        const width = aisle.orientation === 'vertical' ? aisle.width : aisle.height;
-        const height = aisle.orientation === 'vertical' ? aisle.height : aisle.width;
+        const width = aisle.width;
+        const height = aisle.height;
         return x >= aisle.x && x <= aisle.x + width &&
                y >= aisle.y && y <= aisle.y + height;
     });
@@ -282,8 +282,8 @@ function handleCanvasMouseMove(event) {
     }
 
     const hoveredAisle = layoutConfig.aisles.find(aisle => {
-        const width = aisle.orientation === 'vertical' ? aisle.width : aisle.height;
-        const height = aisle.orientation === 'vertical' ? aisle.height : aisle.width;
+        const width = aisle.width;
+        const height = aisle.height;
         return x >= aisle.x && x <= aisle.x + width &&
                y >= aisle.y && y <= aisle.y + height;
     });
@@ -331,8 +331,8 @@ function handleCanvasClick(event) {
 
     const { x, y } = getMousePosition(event);
     const clickedAisle = layoutConfig.aisles.find(aisle => {
-        const width = aisle.orientation === 'vertical' ? aisle.width : aisle.height;
-        const height = aisle.orientation === 'vertical' ? aisle.height : aisle.width;
+        const width = aisle.width;
+        const height = aisle.height;
         return x >= aisle.x && x <= aisle.x + width &&
                y >= aisle.y && y <= aisle.y + height;
     });
