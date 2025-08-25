@@ -1392,7 +1392,19 @@ function openItemModal(item) {
     const modal = document.getElementById('itemModal');
     document.getElementById('itemCodeView').textContent = item.code;
     document.getElementById('itemDescriptionView').textContent = item.description || '';
-    document.getElementById('itemLocationView').textContent = item.location;
+
+    // Desglosar la ubicación (formato: pasillo-estante-casilla, ej. "1-A-2")
+    const [pasillo, estante, casilla] = item.location.split('-');
+    const locationDetails = `
+        <strong>Ubicación:</strong>
+        <ul>
+            <li>Pasillo: ${pasillo}</li>
+            <li>Estante: ${estante}</li>
+            <li>Casilla: ${casilla}</li>
+        </ul>
+    `;
+    document.getElementById('itemLocationView').innerHTML = locationDetails;
+
     modal.style.display = 'block';
 }
 

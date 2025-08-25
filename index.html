@@ -236,7 +236,13 @@
             </div>
             <div class="item-info">
                 <label class="config-label">Ubicación:</label>
-                <span id="itemLocationView"></span>
+                <div id="itemLocationView">
+                    <ul class="location-details">
+                        <li><strong>Pasillo:</strong> <span id="itemLocationPasillo"></span></li>
+                        <li><strong>Estante:</strong> <span id="itemLocationEstante"></span></li>
+                        <li><strong>Casilla:</strong> <span id="itemLocationCasilla"></span></li>
+                    </ul>
+                </div>
             </div>
             <div style="display: flex; justify-content: flex-end; margin-top: 2rem;">
                 <button class="btn btn-secondary" onclick="closeItemModal()">Cerrar</button>
